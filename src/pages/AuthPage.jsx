@@ -1,7 +1,9 @@
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import MeridianMark from "../components/ui/MeridianMark";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
 
 const fieldClass = "mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3.5 py-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]";
 
@@ -10,6 +12,10 @@ function AuthPage({ mode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const title = isSignUp ? "Build a better trading record." : "Welcome back.";
   const submitLabel = isSignUp ? "Create your account" : "Sign in";
@@ -17,20 +23,43 @@ function AuthPage({ mode }) {
   const alternateCopy = isSignUp ? "Already have an account?" : "New to Meridian?";
   const alternateAction = isSignUp ? "Sign in" : "Create an account";
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const nextErrors = {};
     const email = String(data.get("email") || "").trim();
     const password = String(data.get("password") || "");
+    const name = String(data.get("name") || "").trim();
 
     if (!email) nextErrors.email = "Enter your email address.";
     if (!password) nextErrors.password = "Enter your password.";
     if (isSignUp && password && password.length < 8) nextErrors.password = "Use at least 8 characters.";
 
     setErrors(nextErrors);
-    setMessage(Object.keys(nextErrors).length ? "" : "Authentication is not connected yet. Your details have not been saved.");
+    if (Object.keys(nextErrors).length) return;
+
+    setMessage("");
+    setIsSubmitting(true);
+    const { data: authData, error } = isSignUp
+      ? await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } })
+      : await supabase.auth.signInWithPassword({ email, password });
+    setIsSubmitting(false);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    if (isSignUp && !authData.session) {
+      setMessage("Check your email to confirm your account, then sign in to continue.");
+      return;
+    }
+
+    const destination = isSignUp ? "/onboarding" : location.state?.from?.pathname || "/app";
+    navigate(destination, { replace: true });
   }
+
+  if (!isLoading && user) return <Navigate to="/app" replace />;
 
   return (
     <main className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1.05fr_0.95fr]">
@@ -61,10 +90,10 @@ function AuthPage({ mode }) {
             <label className="mt-5 block text-sm font-medium">Password<div className="relative"><input name="password" type={showPassword ? "text" : "password"} autoComplete={isSignUp ? "new-password" : "current-password"} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "password-error" : undefined} className={`${fieldClass} pr-12`} placeholder={isSignUp ? "At least 8 characters" : "Your password"} /><button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute inset-y-0 right-0 grid w-11 place-items-center text-[var(--text-muted)] hover:text-[var(--text-primary)]" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>{errors.password && <span id="password-error" className="mt-2 block text-xs text-[var(--danger)]">{errors.password}</span>}</label>
             {isSignUp && <label className="mt-5 flex gap-3 text-xs leading-5 text-[var(--text-secondary)]"><input type="checkbox" required className="mt-0.5 size-4 accent-[var(--accent)]" />I agree to receive important account and product updates.</label>}
             {message && <p role="status" className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]">{message}</p>}
-            <button type="submit" className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] transition hover:bg-[var(--accent-light)]">{submitLabel}<ArrowRight size={16} /></button>
+            <button type="submit" disabled={isSubmitting} className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] transition hover:bg-[var(--accent-light)] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? "Please wait…" : submitLabel}<ArrowRight size={16} /></button>
           </form>
           <p className="mt-7 text-center text-sm text-[var(--text-secondary)]">{alternateCopy} <Link to={alternatePath} className="font-semibold text-[var(--accent-light)] hover:text-[var(--accent)]">{alternateAction}</Link></p>
-          <p className="mt-10 text-center text-xs leading-5 text-[var(--text-muted)]">Authentication is currently being prepared. This form does not create an account or send your details anywhere.</p>
+          <p className="mt-10 text-center text-xs leading-5 text-[var(--text-muted)]">Your account is secured by Supabase authentication.</p>
         </div>
       </section>
     </main>
