@@ -3,6 +3,7 @@ import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import DashboardPage from "./pages/DashboardPage";
+import TradesPage from "./pages/TradesPage";
 
 const App = () => (
   <BrowserRouter>
@@ -12,6 +13,7 @@ const App = () => (
       <Route path="/sign-up" element={<AuthPage mode="sign-up" />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/app" element={<DashboardPage />} />
+      <Route path="/app/trades" element={<TradesPage />} />
       <Route path="*" element={<LandingPage />} />
     </Routes>
   </BrowserRouter>
