@@ -22,7 +22,7 @@ function OnboardingPage() {
       setStep((current) => current + 1);
       return;
     }
-    setNotice("Your setup is ready to save once Meridian persistence is connected. Nothing has been saved yet.");
+    setNotice("Your setup is ready. Open the dashboard to continue—nothing has been saved yet.");
   }
 
   const content = [
@@ -55,7 +55,7 @@ function OnboardingPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{content.eyebrow}</p>
           <h1 className="mt-4 text-3xl font-medium tracking-[-0.05em] sm:text-4xl">{content.title}</h1>
           <p className="mt-4 text-sm leading-6 text-[var(--text-secondary)] sm:text-base">{content.body}</p>
-          <form className="mt-9 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7" onSubmit={advance}>{content.fields}{notice && <p role="status" className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]">{notice}</p>}<div className="mt-7 flex items-center justify-between gap-4">{step > 0 ? <button type="button" onClick={() => { setStep((current) => current - 1); setNotice(""); }} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Back</button> : <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Home</Link>}<button type="submit" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)]">{step === steps.length - 1 ? "Complete setup" : "Continue"}{step === steps.length - 1 ? <Check size={16} /> : <ArrowRight size={16} />}</button></div></form>
+          <form className="mt-9 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7" onSubmit={advance}>{content.fields}{notice && <div role="status" className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]"><p>{notice}</p><Link to="/app" className="mt-3 inline-flex items-center gap-1 font-semibold text-[var(--accent-light)] hover:text-[var(--accent)]">Open dashboard <ArrowRight size={14} /></Link></div>}<div className="mt-7 flex items-center justify-between gap-4">{step > 0 ? <button type="button" onClick={() => { setStep((current) => current - 1); setNotice(""); }} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Back</button> : <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Home</Link>}<button type="submit" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)]">{step === steps.length - 1 ? "Complete setup" : "Continue"}{step === steps.length - 1 ? <Check size={16} /> : <ArrowRight size={16} />}</button></div></form>
           <p className="mt-5 text-center text-xs text-[var(--text-muted)]">This setup currently stays only in this browser session.</p>
         </div>
       </div>
