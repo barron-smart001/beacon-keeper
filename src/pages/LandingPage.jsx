@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import MeridianMark from "../components/ui/MeridianMark";
 
 const navItems = [
@@ -62,10 +63,16 @@ function SectionHeading({ eyebrow, title, body, centered = false }) {
   );
 }
 
-function ButtonLink({ children, secondary = false, className = "", ...props }) {
+function ButtonLink({ children, secondary = false, className = "", to, ...props }) {
+  const classes = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] ${secondary ? "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] hover:border-[var(--text-muted)]" : "bg-[var(--accent)] text-[#17130d] hover:bg-[var(--accent-light)]"} ${className}`;
+
+  if (to) {
+    return <Link className={classes} to={to}>{children}</Link>;
+  }
+
   return (
     <a
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] ${secondary ? "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] hover:border-[var(--text-muted)]" : "bg-[var(--accent)] text-[#17130d] hover:bg-[var(--accent-light)]"} ${className}`}
+      className={classes}
       {...props}
     >
       {children}
@@ -112,10 +119,10 @@ function LandingPage() {
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8" aria-label="Main navigation">
           <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</a>
           <div className="hidden items-center gap-7 md:flex">{navItems.map(([label, href]) => <a key={label} href={href} className="text-sm text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]">{label}</a>)}</div>
-          <div className="hidden items-center gap-4 md:flex"><a href="#pricing" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Sign in</a><ButtonLink href="#start">Start tracking free</ButtonLink></div>
+          <div className="hidden items-center gap-4 md:flex"><Link to="/sign-in" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Sign in</Link><ButtonLink to="/sign-up">Start tracking free</ButtonLink></div>
           <button type="button" className="grid size-11 place-items-center rounded-full border border-[var(--border)] md:hidden" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={19} /> : <Menu size={20} />}</button>
         </nav>
-        <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)]">{label}</a>)}<ButtonLink href="#start" className="mt-3 w-full">Start tracking free</ButtonLink></div></motion.div>}</AnimatePresence>
+        <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Start tracking free</ButtonLink></div></motion.div>}</AnimatePresence>
       </header>
 
       <section id="top" className="relative isolate border-b border-[var(--border-soft)]">
