@@ -2,6 +2,8 @@ import { ArrowLeft, ArrowRight, Check, ShieldCheck, WalletCards } from "lucide-r
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import MeridianMark from "../components/ui/MeridianMark";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
 
 const steps = ["Your practice", "First account", "First rule"];
 const inputClass = "mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3.5 py-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]";
@@ -9,20 +11,42 @@ const inputClass = "mt-2 w-full rounded-xl border border-[var(--border)] bg-[var
 function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [notice, setNotice] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ style: "", currency: "USD", account: "", rule: "" });
+  const { user } = useAuth();
 
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
   }
 
-  function advance(event) {
+  async function advance(event) {
     event.preventDefault();
     if (step < steps.length - 1) {
       setStep((current) => current + 1);
       return;
     }
-    setNotice("Your setup is ready. Open the dashboard to continue—nothing has been saved yet.");
+    setIsSaving(true);
+    setNotice("");
+    const { error: profileError } = await supabase.from("profiles").upsert({
+      id: user.id,
+      trading_style: form.style,
+      default_currency: form.currency,
+      onboarding_completed: true,
+    });
+    if (!profileError) {
+      const { error: accountError } = await supabase.from("accounts").insert({ user_id: user.id, name: form.account, currency: form.currency });
+      if (!accountError) {
+        const { error: ruleError } = await supabase.from("trading_rules").insert({ user_id: user.id, description: form.rule });
+        if (!ruleError) {
+          setNotice("Your setup is ready. Your first account and rule have been saved.");
+          setIsSaving(false);
+          return;
+        }
+      }
+    }
+    setIsSaving(false);
+    setNotice("We couldn't save your setup. Please try again.");
   }
 
   const content = [
@@ -55,7 +79,7 @@ function OnboardingPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{content.eyebrow}</p>
           <h1 className="mt-4 text-3xl font-medium tracking-[-0.05em] sm:text-4xl">{content.title}</h1>
           <p className="mt-4 text-sm leading-6 text-[var(--text-secondary)] sm:text-base">{content.body}</p>
-          <form className="mt-9 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7" onSubmit={advance}>{content.fields}{notice && <div role="status" className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]"><p>{notice}</p><Link to="/app" className="mt-3 inline-flex items-center gap-1 font-semibold text-[var(--accent-light)] hover:text-[var(--accent)]">Open dashboard <ArrowRight size={14} /></Link></div>}<div className="mt-7 flex items-center justify-between gap-4">{step > 0 ? <button type="button" onClick={() => { setStep((current) => current - 1); setNotice(""); }} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Back</button> : <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Home</Link>}<button type="submit" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)]">{step === steps.length - 1 ? "Complete setup" : "Continue"}{step === steps.length - 1 ? <Check size={16} /> : <ArrowRight size={16} />}</button></div></form>
+          <form className="mt-9 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7" onSubmit={advance}>{content.fields}{notice && <div role="status" className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm leading-6 text-[var(--text-secondary)]"><p>{notice}</p>{notice.startsWith("Your setup") && <Link to="/app" className="mt-3 inline-flex items-center gap-1 font-semibold text-[var(--accent-light)] hover:text-[var(--accent)]">Open dashboard <ArrowRight size={14} /></Link>}</div>}<div className="mt-7 flex items-center justify-between gap-4">{step > 0 ? <button type="button" onClick={() => { setStep((current) => current - 1); setNotice(""); }} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Back</button> : <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={16} /> Home</Link>}<button type="submit" disabled={isSaving} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)] disabled:cursor-not-allowed disabled:opacity-70">{isSaving ? "Saving…" : step === steps.length - 1 ? "Complete setup" : "Continue"}{!isSaving && (step === steps.length - 1 ? <Check size={16} /> : <ArrowRight size={16} />)}</button></div></form>
           <p className="mt-5 text-center text-xs text-[var(--text-muted)]">This setup currently stays only in this browser session.</p>
         </div>
       </div>
