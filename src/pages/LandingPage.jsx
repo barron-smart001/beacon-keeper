@@ -114,7 +114,7 @@ function LandingPage() {
   const motionProps = reducedMotion ? {} : { initial: "hidden", whileInView: "visible", viewport: { once: true, amount: 0.2 }, variants: reveal, transition: { duration: 0.55 } };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
       <header className="sticky top-0 z-20 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur">
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8" aria-label="Main navigation">
           <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</a>
