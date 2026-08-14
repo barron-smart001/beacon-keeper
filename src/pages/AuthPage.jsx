@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import MeridianMark from "../components/ui/MeridianMark";
 import { useAuth } from "../hooks/useAuth";
@@ -16,6 +16,9 @@ function AuthPage({ mode }) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  useEffect(() => {
+    if (location.state?.message) setMessage(location.state.message);
+  }, [location.state?.message]);
 
   const title = isSignUp ? "Build a better trading record." : "Welcome back.";
   const submitLabel = isSignUp ? "Create your account" : "Sign in";
@@ -50,6 +53,12 @@ function AuthPage({ mode }) {
       return;
     }
 
+    if (!authData.user?.email_confirmed_at) {
+      await supabase.auth.signOut();
+      setMessage(isSignUp ? "Check your email to verify your account before signing in." : "Please verify your email address before signing in.");
+      return;
+    }
+
     if (isSignUp && !authData.session) {
       setMessage("Check your email to confirm your account, then sign in to continue.");
       return;
@@ -59,7 +68,7 @@ function AuthPage({ mode }) {
     navigate(destination, { replace: true });
   }
 
-  if (!isLoading && user) return <Navigate to="/app" replace />;
+  if (!isLoading && user?.email_confirmed_at) return <Navigate to="/app" replace />;
 
   return (
     <main className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1.05fr_0.95fr]">

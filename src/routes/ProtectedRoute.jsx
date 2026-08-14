@@ -9,7 +9,7 @@ function ProtectedRoute() {
     return <main className="grid min-h-screen place-items-center bg-[var(--bg)] px-5 text-center text-sm text-[var(--text-secondary)]">Restoring your Meridian session…</main>;
   }
 
-  return user ? <Outlet /> : <Navigate to="/sign-in" replace state={{ from: location }} />;
+  return user?.email_confirmed_at ? <Outlet /> : <Navigate to="/sign-in" replace state={{ from: location, message: "Verify your email address before accessing your dashboard." }} />;
 }
 
 export default ProtectedRoute;

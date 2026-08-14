@@ -1,7 +1,8 @@
-import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, Goal, LayoutDashboard, Menu, Settings, X } from "lucide-react";
+import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, Goal, LayoutDashboard, LogOut, Menu, Settings, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import MeridianMark from "../ui/MeridianMark";
+import { useAuth } from "../../hooks/useAuth";
 
 const navigation = [
   [LayoutDashboard, "Overview", "/app"],
@@ -13,10 +14,15 @@ const navigation = [
 
 function Navigation({ closeMenu }) {
   const { pathname } = useLocation();
+  const { signOut } = useAuth();
+  async function handleSignOut() {
+    await signOut();
+    closeMenu?.();
+  }
   return <nav className="mt-8 space-y-1" aria-label="Application navigation">{navigation.map(([Icon, label, to]) => {
     const active = pathname === to;
     return <Link onClick={closeMenu} key={label} to={to} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition ${active ? "bg-[var(--surface-elevated)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"}`}><Icon size={18} />{label}</Link>;
-  })}<div className="my-5 border-t border-[var(--border-soft)]" /><Link to="/app" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"><Settings size={18} />Settings</Link></nav>;
+  })}<div className="my-5 border-t border-[var(--border-soft)]" /><Link to="/app" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"><Settings size={18} />Settings</Link><button type="button" onClick={handleSignOut} className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"><LogOut size={18} />Sign out</button></nav>;
 }
 
 function AppShell({ children }) {

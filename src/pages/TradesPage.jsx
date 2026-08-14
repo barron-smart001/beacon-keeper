@@ -1,6 +1,8 @@
 import { ArrowRight, ChevronDown, CirclePlus, ClipboardCheck, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppShell from "../components/app/AppShell";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
 
 const initialForm = { instrument: "", direction: "long", entry: "", exit: "", size: "", status: "completed", notes: "" };
 
@@ -36,7 +38,28 @@ function TradesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [trades, setTrades] = useState([]);
   const [notice, setNotice] = useState("");
-  function saveTrade(trade) { setTrades((current) => [trade, ...current]); setFormOpen(false); setNotice("Trade added for this session only. Connect persistence to keep it after refresh."); }
+  const [, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  useEffect(() => {
+    let active = true;
+    async function loadTrades() {
+      const { data, error } = await supabase.from("trades").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (!active) return;
+      if (error) setNotice("We couldn't load your trades. Please refresh and try again.");
+      else setTrades(data ?? []);
+      setIsLoading(false);
+    }
+    if (user?.id) loadTrades();
+    return () => { active = false; };
+  }, [user?.id]);
+  async function saveTrade(trade) {
+    setNotice("");
+    const { data, error } = await supabase.from("trades").insert({ user_id: user.id, instrument: trade.instrument.trim(), direction: trade.direction, status: trade.status, entry: Number(trade.entry), exit: trade.exit ? Number(trade.exit) : null, size: Number(trade.size), pnl: trade.pnl, notes: trade.notes.trim() || null }).select().single();
+    if (error) { setNotice("We couldn't save your trade. Please try again."); return; }
+    setTrades((current) => [data, ...current]);
+    setFormOpen(false);
+    setNotice("Trade saved.");
+  }
   return <AppShell><main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:py-10"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Trading journal</p><h1 className="mt-3 text-3xl font-medium tracking-[-0.045em] sm:text-4xl">Trades</h1><p className="mt-2 text-sm text-[var(--text-secondary)]">Record the decision, not just the outcome.</p></div><button onClick={() => setFormOpen(true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)]"><CirclePlus size={17} /> Record a trade</button></div>{notice && <p role="status" className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">{notice}</p>}<section className="mt-9 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]"><div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-4 sm:px-6"><div><h2 className="text-base font-medium">Trade history</h2><p className="mt-1 text-xs text-[var(--text-muted)]">Records created in this session</p></div><button className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">All statuses <ChevronDown size={14} /></button></div>{trades.length === 0 ? <div className="px-5 py-16 text-center sm:px-6"><ClipboardCheck className="mx-auto text-[var(--accent)]" size={24} /><p className="mt-5 text-sm text-[var(--text-secondary)]">No trades recorded yet.</p><button onClick={() => setFormOpen(true)} className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--accent-light)] hover:text-[var(--accent)]">Record your first trade <ArrowRight size={15} /></button></div> : <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="border-b border-[var(--border-soft)] text-xs text-[var(--text-muted)]"><tr><th className="px-5 py-3 font-medium sm:px-6">Instrument</th><th className="px-5 py-3 font-medium">Direction</th><th className="px-5 py-3 font-medium">Status</th><th className="px-5 py-3 font-medium">Entry / Exit</th><th className="px-5 py-3 text-right font-medium sm:px-6">P/L</th></tr></thead><tbody>{trades.map((trade) => <tr key={trade.id} className="border-b border-[var(--border-soft)] last:border-0"><td className="px-5 py-4 font-medium sm:px-6">{trade.instrument}</td><td className="px-5 py-4 capitalize text-[var(--text-secondary)]">{trade.direction}</td><td className="px-5 py-4"><span className="rounded-full border border-[var(--border)] px-2 py-1 text-xs capitalize text-[var(--text-secondary)]">{trade.status}</span></td><td className="px-5 py-4 font-mono text-xs text-[var(--text-secondary)]">{trade.entry} {trade.exit ? `/ ${trade.exit}` : ""}</td><td className={`px-5 py-4 text-right font-mono sm:px-6 ${trade.pnl !== null && trade.pnl > 0 ? "text-[var(--success)]" : trade.pnl !== null && trade.pnl < 0 ? "text-[var(--danger)]" : "text-[var(--text-muted)]"}`}>{formatPnl(trade.pnl)}</td></tr>)}</tbody></table></div>}</section></main>{formOpen && <TradeForm onClose={() => setFormOpen(false)} onSave={saveTrade} />}</AppShell>;
 }
 
