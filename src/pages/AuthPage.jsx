@@ -26,46 +26,71 @@ function AuthPage({ mode }) {
   const alternateCopy = isSignUp ? "Already have an account?" : "New to Meridian?";
   const alternateAction = isSignUp ? "Sign in" : "Create an account";
 
-  async function handleSubmit(event) {
+   async function handleSubmit(event) {
     event.preventDefault();
+
     const data = new FormData(event.currentTarget);
-    const nextErrors = {};
     const email = String(data.get("email") || "").trim();
     const password = String(data.get("password") || "");
     const name = String(data.get("name") || "").trim();
+    const nextErrors = {};
 
     if (!email) nextErrors.email = "Enter your email address.";
     if (!password) nextErrors.password = "Enter your password.";
-    if (isSignUp && password && password.length < 8) nextErrors.password = "Use at least 8 characters.";
+    if (isSignUp && password.length < 8) {
+      nextErrors.password = "Use at least 8 characters.";
+    }
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
     setMessage("");
     setIsSubmitting(true);
-    const { data: authData, error } = isSignUp
-      ? await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } })
-      : await supabase.auth.signInWithPassword({ email, password });
-    setIsSubmitting(false);
 
-    if (error) {
-      setMessage(error.message);
-      return;
+    try {
+      const { data: authData, error } = isSignUp
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { full_name: name },
+              emailRedirectTo: `${window.location.origin}/sign-in`,
+            },
+          })
+        : await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+
+      if (isSignUp && !authData.session) {
+        setMessage(
+          "Account created. Check your email to confirm your account, then sign in."
+        );
+        return;
+      }
+
+      if (!authData.user?.email_confirmed_at) {
+        await supabase.auth.signOut();
+        setMessage("Please verify your email address before signing in.");
+        return;
+      }
+
+      const destination = isSignUp
+        ? "/onboarding"
+        : location.state?.from?.pathname || "/app";
+
+      navigate(destination, { replace: true });
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (!authData.user?.email_confirmed_at) {
-      await supabase.auth.signOut();
-      setMessage(isSignUp ? "Check your email to verify your account before signing in." : "Please verify your email address before signing in.");
-      return;
-    }
-
-    if (isSignUp && !authData.session) {
-      setMessage("Check your email to confirm your account, then sign in to continue.");
-      return;
-    }
-
-    const destination = isSignUp ? "/onboarding" : location.state?.from?.pathname || "/app";
-    navigate(destination, { replace: true });
   }
 
   if (!isLoading && user?.email_confirmed_at) return <Navigate to="/app" replace />;
