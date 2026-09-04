@@ -127,7 +127,7 @@ function AuthPage({ mode }) {
             <button type="submit" disabled={isSubmitting} className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] transition hover:bg-[var(--accent-light)] disabled:cursor-not-allowed disabled:opacity-70">{isSubmitting ? "Please wait…" : submitLabel}<ArrowRight size={16} /></button>
           </form>
           <p className="mt-7 text-center text-sm text-[var(--text-secondary)]">{alternateCopy} <Link to={alternatePath} className="font-semibold text-[var(--accent-light)] hover:text-[var(--accent)]">{alternateAction}</Link></p>
-          <p className="mt-10 text-center text-xs leading-5 text-[var(--text-muted)]">Your account is secured by Supabase authentication.</p>
+          <p className="mt-10 text-center text-xs leading-5 text-[var(--text-muted)]">Your account is secured by Meridain authentication.</p>
         </div>
       </section>
     </main>
