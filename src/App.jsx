@@ -5,6 +5,7 @@ import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import DashboardPage from "./pages/DashboardPage";
 import TradesPage from "./pages/TradesPage";
+import MoneyPage from "./pages/Finance/MoneyPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 const App = () => (
@@ -23,7 +24,7 @@ const App = () => (
         <Route path="/app/trades" element={<TradesPage />} />
 
         {/* Feature routes - pages will be built next */}
-        <Route path="/app/money" element={<DashboardPage />} />
+                      <Route path="/app/money" element={<MoneyPage />} />
         <Route path="/app/goals" element={<DashboardPage />} />
         <Route path="/app/calendar" element={<DashboardPage />} />
         <Route path="/app/settings" element={<DashboardPage />} />
