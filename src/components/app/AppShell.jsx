@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, Goal, LayoutDashboard, LogOut, Menu, Settings, X } from "lucide-react";
+import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, Goal, LayoutDashboard, ListChecks, LogOut, Menu, Settings, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import MeridianMark from "../ui/MeridianMark";
@@ -8,6 +8,7 @@ const navigation = [
   [LayoutDashboard, "Overview", "/app"],
   [ClipboardCheck, "Trades", "/app/trades"],
   [CircleDollarSign, "Money", "/app/money"],
+  [ListChecks, "Rules", "/app/rules"],
   [Goal, "Goals", "/app/goals"],
   [CalendarDays, "Calendar", "/app/calendar"],
 ];
@@ -22,13 +23,17 @@ function Navigation({ closeMenu }) {
   return <nav className="mt-8 space-y-1" aria-label="Application navigation">{navigation.map(([Icon, label, to]) => {
     const active = pathname === to;
     return <Link onClick={closeMenu} key={label} to={to} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition ${active ? "bg-[var(--surface-elevated)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"}`}><Icon size={18} />{label}</Link>;
-  })}<div className="my-5 border-t border-[var(--border-soft)]" /> <Link
-  to="/app/settings"
-  className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
->
-  <Settings size={18} />
-  Settings
-</Link><button type="button" onClick={handleSignOut} className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"><LogOut size={18} />Sign out</button></nav>;
+  })}
+  <div className="my-5 border-t border-[var(--border-soft)]" />
+  <Link
+    onClick={closeMenu}
+    to="/app/settings"
+    className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition ${pathname === "/app/settings" ? "bg-[var(--surface-elevated)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"}`}
+  >
+    <Settings size={18} />
+    Settings
+  </Link>
+  <button type="button" onClick={handleSignOut} className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"><LogOut size={18} />Sign out</button></nav>;
 }
 
 function AppShell({ children }) {

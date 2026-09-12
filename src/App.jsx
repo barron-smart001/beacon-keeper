@@ -6,6 +6,10 @@ import OnboardingPage from "./pages/OnboardingPage";
 import DashboardPage from "./pages/DashboardPage";
 import TradesPage from "./pages/TradesPage";
 import MoneyPage from "./pages/Finance/MoneyPage";
+import RulesPage from "./pages/RulesPage";
+import GoalsPage from "./pages/GoalsPage";
+import CalendarPage from "./pages/CalendarPage";
+import SettingsPage from "./pages/SettingsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 const App = () => (
@@ -22,12 +26,11 @@ const App = () => (
 
         <Route path="/app" element={<DashboardPage />} />
         <Route path="/app/trades" element={<TradesPage />} />
-
-        {/* Feature routes - pages will be built next */}
-                      <Route path="/app/money" element={<MoneyPage />} />
-        <Route path="/app/goals" element={<DashboardPage />} />
-        <Route path="/app/calendar" element={<DashboardPage />} />
-        <Route path="/app/settings" element={<DashboardPage />} />
+        <Route path="/app/money" element={<MoneyPage />} />
+        <Route path="/app/rules" element={<RulesPage />} />
+        <Route path="/app/goals" element={<GoalsPage />} />
+        <Route path="/app/calendar" element={<CalendarPage />} />
+        <Route path="/app/settings" element={<SettingsPage />} />
       </Route>
 
       {/* Fallback */}
