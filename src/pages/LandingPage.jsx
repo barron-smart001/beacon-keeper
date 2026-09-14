@@ -114,8 +114,8 @@ function LandingPage() {
   const motionProps = reducedMotion ? {} : { initial: "hidden", whileInView: "visible", viewport: { once: true, amount: 0.2 }, variants: reveal, transition: { duration: 0.55 } };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]">
-      <header className="sticky top-0 z-20 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+      <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur-sm">
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8" aria-label="Main navigation">
           <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</a>
           <div className="hidden items-center gap-7 md:flex">{navItems.map(([label, href]) => <a key={label} href={href} className="text-sm text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]">{label}</a>)}</div>
@@ -125,7 +125,7 @@ function LandingPage() {
         <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Get started</ButtonLink></div></motion.div>}</AnimatePresence>
       </header>
 
-      <section id="top" className="relative isolate overflow-hidden border-b border-[var(--border-soft)]">
+      <section id="top" className="relative isolate border-b border-[var(--border-soft)]">
         <div className="pointer-events-none absolute left-1/2 top-[-260px] -z-10 h-[560px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(201,168,118,0.12),transparent_67%)]" />
         <motion.div {...motionProps} className="mx-auto max-w-7xl px-5 pb-20 pt-20 text-center sm:pb-24 sm:pt-28 lg:px-8 lg:pb-28">
           <p className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)]"><span className="size-1.5 rounded-full bg-[var(--accent)]" /> Built for intentional traders</p>
