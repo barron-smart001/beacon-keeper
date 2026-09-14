@@ -316,7 +316,7 @@ function TradesPage() {
 
       if (error) {
         console.error("Trade load error:", error);
-        setNotice(`Trade load error: ${error.message}`);
+        setNotice("We couldn't load your trades. Please try again.");
       } else {
         setTrades(data ?? []);
       }
@@ -355,13 +355,7 @@ function TradesPage() {
 
     if (error) {
       console.error("Trade save error:", error);
-
-      setNotice(
-        `Trade save error: ${error.message}${
-          error.details ? ` — ${error.details}` : ""
-        }`
-      );
-
+      setNotice("We couldn't save your trade. Please try again.");
       return;
     }
 
