@@ -114,24 +114,24 @@ function LandingPage() {
   const motionProps = reducedMotion ? {} : { initial: "hidden", whileInView: "visible", viewport: { once: true, amount: 0.2 }, variants: reveal, transition: { duration: 0.55 } };
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+    <main className="min-h-screen overflow-x-hidden bg-[var(--bg)] text-[var(--text-primary)]">
       <header className="sticky top-0 z-20 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur">
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8" aria-label="Main navigation">
           <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</a>
           <div className="hidden items-center gap-7 md:flex">{navItems.map(([label, href]) => <a key={label} href={href} className="text-sm text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]">{label}</a>)}</div>
-          <div className="hidden items-center gap-4 md:flex"><Link to="/sign-in" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Sign in</Link><ButtonLink to="/sign-up">Start tracking free</ButtonLink></div>
+          <div className="hidden items-center gap-4 md:flex"><Link to="/sign-in" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Sign in</Link><ButtonLink to="/sign-up">Get started</ButtonLink></div>
           <button type="button" className="grid size-11 place-items-center rounded-full border border-[var(--border)] md:hidden" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={19} /> : <Menu size={20} />}</button>
         </nav>
-        <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Start tracking free</ButtonLink></div></motion.div>}</AnimatePresence>
+        <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Get started</ButtonLink></div></motion.div>}</AnimatePresence>
       </header>
 
-      <section id="top" className="relative isolate border-b border-[var(--border-soft)]">
+      <section id="top" className="relative isolate overflow-hidden border-b border-[var(--border-soft)]">
         <div className="pointer-events-none absolute left-1/2 top-[-260px] -z-10 h-[560px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(201,168,118,0.12),transparent_67%)]" />
         <motion.div {...motionProps} className="mx-auto max-w-7xl px-5 pb-20 pt-20 text-center sm:pb-24 sm:pt-28 lg:px-8 lg:pb-28">
           <p className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)]"><span className="size-1.5 rounded-full bg-[var(--accent)]" /> Built for intentional traders</p>
           <h1 className="text-balance mx-auto max-w-4xl text-5xl font-medium tracking-[-0.06em] sm:text-6xl lg:text-8xl">Your trading. Your money. <span className="text-[var(--accent-light)]">Your discipline.</span></h1>
           <p className="mx-auto mt-7 max-w-2xl text-pretty text-base leading-7 text-[var(--text-secondary)] sm:text-lg">Meridian is the calm, complete record of how you trade and how you progress—one place to plan, record, review, and improve.</p>
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink href="#start" className="px-6">Start tracking free <ArrowRight size={16} /></ButtonLink><ButtonLink secondary href="#features" className="px-6">Explore Meridian</ButtonLink></div>
+          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink href="#start" className="px-6">Get started <ArrowRight size={16} /></ButtonLink><ButtonLink secondary href="#features" className="px-6">Explore Meridian</ButtonLink></div>
           <p className="mt-5 text-xs text-[var(--text-muted)]">No broker connection required.</p>
           <ProductPreview />
         </motion.div>
