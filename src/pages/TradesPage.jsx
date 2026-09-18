@@ -1,11 +1,14 @@
+
 import {
   ArrowRight,
   ChevronDown,
   CirclePlus,
   ClipboardCheck,
+  Lock,
+  Pencil,
+  Trash2,
   X,
 } from "lucide-react";
-
 import { useEffect, useState } from "react";
 import AppShell from "../components/app/AppShell";
 import { useAuth } from "../hooks/useAuth";
@@ -28,7 +31,8 @@ function calculatePnl({ direction, entry, exit, size }) {
 
   if (
     ![entryValue, exitValue, sizeValue].every(Number.isFinite) ||
-    sizeValue <= 0
+    sizeValue <= 0 ||
+    !exit
   ) {
     return null;
   }
@@ -49,10 +53,27 @@ function formatPnl(value) {
   }).format(value);
 }
 
-function TradeForm({ onClose, onSave }) {
-  const [form, setForm] = useState(initialForm);
-  const [error, setError] = useState("");
+function TradeForm({
+  onClose,
+  onSave,
+  editingTrade,
+  isSaving,
+}) {
+  const [form, setForm] = useState(
+    editingTrade
+      ? {
+          instrument: editingTrade.instrument ?? "",
+          direction: editingTrade.direction ?? "long",
+          entry: editingTrade.entry ?? "",
+          exit: editingTrade.exit ?? "",
+          size: editingTrade.size ?? "",
+          status: editingTrade.status ?? "completed",
+          notes: editingTrade.notes ?? "",
+        }
+      : initialForm
+  );
 
+  const [error, setError] = useState("");
   const pnl = calculatePnl(form);
 
   function update(event) {
@@ -87,7 +108,6 @@ function TradeForm({ onClose, onSave }) {
     }
 
     setError("");
-
     onSave({
       ...form,
       pnl,
@@ -111,14 +131,14 @@ function TradeForm({ onClose, onSave }) {
         <div className="flex items-start justify-between gap-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-              New record
+              {editingTrade ? "Edit record" : "New record"}
             </p>
 
             <h2
               id="trade-form-title"
               className="mt-2 text-2xl font-medium tracking-[-0.04em]"
             >
-              Record a trade
+              {editingTrade ? "Edit trade" : "Record a trade"}
             </h2>
           </div>
 
@@ -135,7 +155,6 @@ function TradeForm({ onClose, onSave }) {
         <div className="mt-7 grid gap-5 sm:grid-cols-2">
           <label className="text-sm font-medium sm:col-span-2">
             Instrument
-
             <input
               autoFocus
               required
@@ -149,7 +168,6 @@ function TradeForm({ onClose, onSave }) {
 
           <label className="text-sm font-medium">
             Direction
-
             <select
               name="direction"
               value={form.direction}
@@ -163,7 +181,6 @@ function TradeForm({ onClose, onSave }) {
 
           <label className="text-sm font-medium">
             Status
-
             <select
               name="status"
               value={form.status}
@@ -177,7 +194,6 @@ function TradeForm({ onClose, onSave }) {
 
           <label className="text-sm font-medium">
             Entry price
-
             <input
               required
               min="0"
@@ -195,7 +211,6 @@ function TradeForm({ onClose, onSave }) {
             {form.status === "completed"
               ? "Exit price"
               : "Current price (optional)"}
-
             <input
               required={form.status === "completed"}
               min="0"
@@ -211,7 +226,6 @@ function TradeForm({ onClose, onSave }) {
 
           <label className="text-sm font-medium sm:col-span-2">
             Position size
-
             <input
               required
               min="0"
@@ -282,9 +296,15 @@ function TradeForm({ onClose, onSave }) {
 
           <button
             type="submit"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)]"
+            disabled={isSaving}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)] disabled:opacity-60"
           >
-            Save trade
+            {isSaving
+              ? "Saving..."
+              : editingTrade
+              ? "Save changes"
+              : "Save trade"}
+
             <ArrowRight size={16} />
           </button>
         </div>
@@ -295,10 +315,32 @@ function TradeForm({ onClose, onSave }) {
 
 function TradesPage() {
   const [formOpen, setFormOpen] = useState(false);
+  const [editingTrade, setEditingTrade] = useState(null);
   const [trades, setTrades] = useState([]);
+
   const [notice, setNotice] = useState("");
+  const [noticeType, setNoticeType] = useState("success");
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteConfirmTrade, setDeleteConfirmTrade] = useState(null);
 
   const { user } = useAuth();
+
+  function showToast(message, type = "success") {
+    setNotice(message);
+    setNoticeType(type);
+  }
+
+  useEffect(() => {
+    if (!notice) return;
+
+    const timer = setTimeout(() => {
+      setNotice("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     let active = true;
@@ -316,7 +358,10 @@ function TradesPage() {
 
       if (error) {
         console.error("Trade load error:", error);
-        setNotice("We couldn't load your trades. Please try again.");
+        showToast(
+          "We couldn't load your trades. Please try again.",
+          "error"
+        );
       } else {
         setTrades(data ?? []);
       }
@@ -329,39 +374,163 @@ function TradesPage() {
     };
   }, [user?.id]);
 
+  function openNewTrade() {
+    setEditingTrade(null);
+    setFormOpen(true);
+  }
+
+  function openEditTrade(trade) {
+    if (trade.edit_count >= 1) {
+      showToast(
+        "This trade has already been edited and is now locked.",
+        "error"
+      );
+      return;
+    }
+
+    setEditingTrade(trade);
+    setFormOpen(true);
+  }
+
   async function saveTrade(trade) {
-    setNotice("");
-
     if (!user?.id) {
-      setNotice("You must be signed in before recording a trade.");
+      showToast("You must be signed in before recording a trade.", "error");
       return;
     }
 
-    const { data, error } = await supabase
-      .from("trades")
-      .insert({
-        user_id: user.id,
-        instrument: trade.instrument.trim(),
-        direction: trade.direction,
-        status: trade.status,
-        entry: Number(trade.entry),
-        exit: trade.exit ? Number(trade.exit) : null,
-        size: Number(trade.size),
-        pnl: trade.pnl,
-        notes: trade.notes.trim() || null,
-      })
-      .select()
-      .single();
+    setIsSaving(true);
 
-    if (error) {
-      console.error("Trade save error:", error);
-      setNotice("We couldn't save your trade. Please try again.");
+    try {
+      if (editingTrade) {
+        const { data, error } = await supabase
+          .from("trades")
+          .update({
+            instrument: trade.instrument.trim(),
+            direction: trade.direction,
+            status: trade.status,
+            entry: Number(trade.entry),
+            exit: trade.exit ? Number(trade.exit) : null,
+            size: Number(trade.size),
+            pnl: trade.pnl,
+            notes: trade.notes.trim() || null,
+            edit_count: 1,
+          })
+          .eq("id", editingTrade.id)
+          .eq("user_id", user.id)
+          .eq("edit_count", 0)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Trade update error:", error);
+
+          showToast(
+            "This trade could not be edited. It may already be locked.",
+            "error"
+          );
+
+          return;
+        }
+
+        setTrades((current) =>
+          current.map((item) =>
+            item.id === editingTrade.id ? data : item
+          )
+        );
+
+        setFormOpen(false);
+        setEditingTrade(null);
+
+        showToast(
+          "Trade updated successfully. This record is now locked."
+        );
+
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("trades")
+        .insert({
+          user_id: user.id,
+          instrument: trade.instrument.trim(),
+          direction: trade.direction,
+          status: trade.status,
+          entry: Number(trade.entry),
+          exit: trade.exit ? Number(trade.exit) : null,
+          size: Number(trade.size),
+          pnl: trade.pnl,
+          notes: trade.notes.trim() || null,
+          edit_count: 0,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Trade save error:", error);
+
+        showToast(
+          "We couldn't save your trade. Please try again.",
+          "error"
+        );
+
+        return;
+      }
+
+      setTrades((current) => [data, ...current]);
+      setFormOpen(false);
+
+      showToast("Trade saved successfully.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function deleteTrade(trade) {
+    if (trade.edit_count >= 1) {
+      showToast(
+        "This trade has already been edited and cannot be deleted.",
+        "error"
+      );
       return;
     }
 
-    setTrades((current) => [data, ...current]);
-    setFormOpen(false);
-    setNotice("Trade saved successfully.");
+    setDeleteConfirmTrade(trade);
+  }
+
+  async function confirmDeleteTrade() {
+    if (!deleteConfirmTrade || !user?.id) return;
+
+    const trade = deleteConfirmTrade;
+    setDeletingId(trade.id);
+
+    try {
+      const { error } = await supabase
+        .from("trades")
+        .delete()
+        .eq("id", trade.id)
+        .eq("user_id", user.id)
+        .eq("edit_count", 0);
+
+      if (error) {
+        console.error("Trade delete error:", error);
+
+        showToast(
+          "We couldn't delete this trade. It may already be locked.",
+          "error"
+        );
+
+        return;
+      }
+
+      setTrades((current) =>
+        current.filter((item) => item.id !== trade.id)
+      );
+
+      setDeleteConfirmTrade(null);
+      showToast("Trade deleted successfully.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -383,7 +552,8 @@ function TradesPage() {
           </div>
 
           <button
-            onClick={() => setFormOpen(true)}
+            type="button"
+            onClick={openNewTrade}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)]"
           >
             <CirclePlus size={17} />
@@ -391,26 +561,22 @@ function TradesPage() {
           </button>
         </div>
 
-        {notice && (
-          <p
-            role="status"
-            className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]"
-          >
-            {notice}
-          </p>
-        )}
-
         <section className="mt-9 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
           <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-4 sm:px-6">
             <div>
-              <h2 className="text-base font-medium">Trade history</h2>
+              <h2 className="text-base font-medium">
+                Trade history
+              </h2>
 
               <p className="mt-1 text-xs text-[var(--text-muted)]">
                 Your recorded trades
               </p>
             </div>
 
-            <button className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"
+            >
               All statuses
               <ChevronDown size={14} />
             </button>
@@ -428,7 +594,8 @@ function TradesPage() {
               </p>
 
               <button
-                onClick={() => setFormOpen(true)}
+                type="button"
+                onClick={openNewTrade}
                 className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--accent-light)] hover:text-[var(--accent)]"
               >
                 Record your first trade
@@ -443,53 +610,104 @@ function TradesPage() {
                     <th className="px-5 py-3 font-medium sm:px-6">
                       Instrument
                     </th>
-                    <th className="px-5 py-3 font-medium">Direction</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium">Entry / Exit</th>
+
+                    <th className="px-5 py-3 font-medium">
+                      Direction
+                    </th>
+
+                    <th className="px-5 py-3 font-medium">
+                      Status
+                    </th>
+
+                    <th className="px-5 py-3 font-medium">
+                      Entry / Exit
+                    </th>
+
                     <th className="px-5 py-3 text-right font-medium sm:px-6">
                       P/L
+                    </th>
+
+                    <th className="px-5 py-3 text-right font-medium sm:px-6">
+                      Actions
                     </th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {trades.map((trade) => (
-                    <tr
-                      key={trade.id}
-                      className="border-b border-[var(--border-soft)] last:border-0"
-                    >
-                      <td className="px-5 py-4 font-medium sm:px-6">
-                        {trade.instrument}
-                      </td>
+                  {trades.map((trade) => {
+                    const locked = trade.edit_count >= 1;
 
-                      <td className="px-5 py-4 capitalize text-[var(--text-secondary)]">
-                        {trade.direction}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <span className="rounded-full border border-[var(--border)] px-2 py-1 text-xs capitalize text-[var(--text-secondary)]">
-                          {trade.status}
-                        </span>
-                      </td>
-
-                      <td className="px-5 py-4 font-mono text-xs text-[var(--text-secondary)]">
-                        {trade.entry}
-                        {trade.exit ? ` / ${trade.exit}` : ""}
-                      </td>
-
-                      <td
-                        className={`px-5 py-4 text-right font-mono sm:px-6 ${
-                          trade.pnl !== null && trade.pnl > 0
-                            ? "text-[var(--success)]"
-                            : trade.pnl !== null && trade.pnl < 0
-                            ? "text-[var(--danger)]"
-                            : "text-[var(--text-muted)]"
-                        }`}
+                    return (
+                      <tr
+                        key={trade.id}
+                        className="border-b border-[var(--border-soft)] last:border-0"
                       >
-                        {formatPnl(trade.pnl)}
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-5 py-4 font-medium sm:px-6">
+                          {trade.instrument}
+                        </td>
+
+                        <td className="px-5 py-4 capitalize text-[var(--text-secondary)]">
+                          {trade.direction}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <span className="rounded-full border border-[var(--border)] px-2 py-1 text-xs capitalize text-[var(--text-secondary)]">
+                            {trade.status}
+                          </span>
+                        </td>
+
+                        <td className="px-5 py-4 font-mono text-xs text-[var(--text-secondary)]">
+                          {trade.entry}
+                          {trade.exit ? ` / ${trade.exit}` : ""}
+                        </td>
+
+                        <td
+                          className={`px-5 py-4 text-right font-mono sm:px-6 ${
+                            trade.pnl !== null && trade.pnl > 0
+                              ? "text-[var(--success)]"
+                              : trade.pnl !== null && trade.pnl < 0
+                              ? "text-[var(--danger)]"
+                              : "text-[var(--text-muted)]"
+                          }`}
+                        >
+                          {formatPnl(trade.pnl)}
+                        </td>
+
+                        <td className="px-5 py-4 sm:px-6">
+                          {locked ? (
+                            <div className="flex items-center justify-end gap-1.5 text-xs text-[var(--text-muted)]">
+                              <Lock size={13} />
+                              Locked
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEditTrade(trade)}
+                                className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]"
+                              >
+                                <Pencil size={14} />
+                                Edit
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => deleteTrade(trade)}
+                                disabled={deletingId === trade.id}
+                                className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--danger)] disabled:opacity-50"
+                              >
+                                <Trash2 size={14} />
+
+                                {deletingId === trade.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -499,12 +717,113 @@ function TradesPage() {
 
       {formOpen && (
         <TradeForm
-          onClose={() => setFormOpen(false)}
+          onClose={() => {
+            setFormOpen(false);
+            setEditingTrade(null);
+          }}
           onSave={saveTrade}
+          editingTrade={editingTrade}
+          isSaving={isSaving}
         />
+      )}
+
+      {deleteConfirmTrade && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-trade-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deletingId) {
+              setDeleteConfirmTrade(null);
+            }
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl sm:p-7">
+            <div className="flex items-start justify-between gap-5">
+              <div className="grid size-11 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--danger)]">
+                <Trash2 size={18} />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmTrade(null)}
+                disabled={Boolean(deletingId)}
+                className="grid size-9 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-[var(--surface-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Close delete confirmation"
+              >
+                <X size={17} />
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                Delete record
+              </p>
+
+              <h2
+                id="delete-trade-title"
+                className="mt-2 text-2xl font-medium tracking-[-0.04em]"
+              >
+                Delete this trade?
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+                This will permanently remove
+                {deleteConfirmTrade.instrument
+                  ? ` ${deleteConfirmTrade.instrument}`
+                  : " this trade"}
+                {" from your journal. This action cannot be undone."}
+              </p>
+            </div>
+
+            <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmTrade(null)}
+                disabled={Boolean(deletingId)}
+                className="min-h-11 rounded-full border border-[var(--border)] px-5 text-sm font-medium text-[var(--text-secondary)] transition hover:bg-[var(--surface-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Keep trade
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmDeleteTrade}
+                disabled={Boolean(deletingId)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--danger)] px-5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 size={15} />
+                {deletingId === deleteConfirmTrade.id
+                  ? "Deleting..."
+                  : "Delete trade"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notice && (
+        <div
+          role="status"
+          className="fixed bottom-5 right-5 z-50 max-w-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-2xl"
+        >
+          <div className="flex items-start gap-3">
+            <span
+              className={`mt-1 size-2 shrink-0 rounded-full ${
+                noticeType === "error"
+                  ? "bg-[var(--danger)]"
+                  : "bg-[var(--success)]"
+              }`}
+            />
+
+            <p>{notice}</p>
+          </div>
+        </div>
       )}
     </AppShell>
   );
 }
 
 export default TradesPage;
+
