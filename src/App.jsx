@@ -8,6 +8,7 @@ import TradesPage from "./pages/TradesPage";
 import MoneyPage from "./pages/Finance/MoneyPage";
 import RulesPage from "./pages/RulesPage";
 import GoalsPage from "./pages/GoalsPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -19,6 +20,8 @@ const App = () => (
       <Route path="/" element={<LandingPage />} />
       <Route path="/sign-in" element={<AuthPage mode="sign-in" />} />
       <Route path="/sign-up" element={<AuthPage mode="sign-up" />} />
+      <Route path="/forgot-password" element={<AuthPage mode="forgot-password" />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected application */}
       <Route element={<ProtectedRoute />}>
