@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import FloatingBackground from "../components/motion/FloatingBackground";
 import MeridianMark from "../components/ui/MeridianMark";
 
 const navItems = [
@@ -57,32 +58,45 @@ function SectionHeading({ eyebrow, title, body, centered = false }) {
   return (
     <div className={centered ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
       <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{eyebrow}</p>
-      <h2 className="text-balance text-3xl font-medium tracking-[-0.04em] text-[var(--text-primary)] sm:text-4xl lg:text-5xl">{title}</h2>
+      <h2 className="text-balance text-3xl font-medium tracking-[-0.04em] text-[var(--text-primary)] transition-all duration-300 hover:text-[var(--accent-light)] hover:[text-shadow:0_0_18px_rgba(201,168,118,0.18)] sm:text-4xl lg:text-5xl">{title}</h2>
       {body && <p className="mt-5 text-base leading-7 text-[var(--text-secondary)] sm:text-lg">{body}</p>}
     </div>
   );
 }
 
 function ButtonLink({ children, secondary = false, className = "", to, ...props }) {
-  const classes = `inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] ${secondary ? "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] hover:border-[var(--text-muted)]" : "bg-[var(--accent)] text-[#17130d] hover:bg-[var(--accent-light)]"} ${className}`;
+  const classes = `group relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded-full px-5 text-sm font-semibold shadow-[0_0_0_rgba(0,0,0,0)] transition-all duration-300 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(201,168,118,0.18)] ${secondary ? "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent-light)]" : "bg-[var(--accent)] text-[#17130d] hover:bg-[var(--accent-light)] hover:brightness-105"} ${className}`;
+
+  const shimmer = secondary ? "bg-[linear-gradient(120deg,transparent_0%,rgba(201,168,118,0.15)_45%,transparent_100%)]" : "bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.2)_45%,transparent_100%)]";
+
+  const buttonContent = (
+    <>
+      <span className={`pointer-events-none absolute inset-y-0 left-[-32%] w-1/3 -skew-x-12 opacity-0 transition-all duration-700 ease-out group-hover:translate-x-[300%] group-hover:opacity-100 ${shimmer}`} />
+      <span className="relative inline-flex items-center gap-2">{children}</span>
+    </>
+  );
 
   if (to) {
-    return <Link className={classes} to={to}>{children}</Link>;
+    return <Link className={classes} to={to}>{buttonContent}</Link>;
   }
 
   return (
-    <a
-      className={classes}
-      {...props}
-    >
-      {children}
+    <a className={classes} {...props}>
+      {buttonContent}
     </a>
   );
 }
 
 function ProductPreview() {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <div className="relative mx-auto mt-12 max-w-5xl rounded-[22px] border border-[var(--border)] bg-[#0d0e12] p-2 shadow-[0_25px_80px_rgba(0,0,0,0.35)] sm:p-3">
+    <motion.div
+      initial={false}
+      animate={reducedMotion ? { y: 0 } : { y: [0, -8, 0] }}
+      transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
+      className="relative mx-auto mt-12 max-w-5xl rounded-[22px] border border-[var(--border)] bg-[#0d0e12] p-2 shadow-[0_25px_80px_rgba(0,0,0,0.35)] sm:p-3"
+    >
       <div className="overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--bg)]">
         <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2.5 text-sm font-semibold"><MeridianMark className="size-5" /> Meridian</div>
@@ -104,7 +118,7 @@ function ProductPreview() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -114,44 +128,136 @@ function LandingPage() {
   const motionProps = reducedMotion ? {} : { initial: "hidden", whileInView: "visible", viewport: { once: true, amount: 0.2 }, variants: reveal, transition: { duration: 0.55 } };
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+    <main className="relative bg-[var(--bg)] text-[var(--text-primary)]">
+      <FloatingBackground />
       <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur-sm">
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8" aria-label="Main navigation">
           <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</a>
-          <div className="hidden items-center gap-7 md:flex">{navItems.map(([label, href]) => <a key={label} href={href} className="text-sm text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]">{label}</a>)}</div>
-          <div className="hidden items-center gap-4 md:flex"><Link to="/sign-in" className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Sign in</Link><ButtonLink to="/sign-up">Get started</ButtonLink></div>
+          <div className="hidden items-center gap-7 md:flex">{navItems.map(([label, href]) => <a key={label} href={href} className="text-sm text-[var(--text-secondary)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-[var(--accent-light)] hover:[text-shadow:0_0_18px_rgba(201,168,118,0.2)]">{label}</a>)}</div>
+          <div className="hidden items-center gap-4 md:flex"><Link to="/sign-in" className="text-sm font-medium text-[var(--text-secondary)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-[var(--accent-light)] hover:[text-shadow:0_0_18px_rgba(201,168,118,0.2)]">Sign in</Link><ButtonLink to="/sign-up">Get started</ButtonLink></div>
           <button type="button" className="grid size-11 place-items-center rounded-full border border-[var(--border)] md:hidden" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={19} /> : <Menu size={20} />}</button>
         </nav>
-        <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Get started</ButtonLink></div></motion.div>}</AnimatePresence>
+        <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)] transition-all duration-300 hover:text-[var(--accent-light)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Get started</ButtonLink></div></motion.div>}</AnimatePresence>
       </header>
 
       <section id="top" className="relative isolate border-b border-[var(--border-soft)]">
-        <div className="pointer-events-none absolute left-1/2 top-[-260px] -z-10 h-[560px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(201,168,118,0.12),transparent_67%)]" />
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-[-260px] -z-10 h-[560px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(201,168,118,0.15),rgba(201,168,118,0.08)_22%,transparent_68%)] blur-[10px]"
+          animate={reducedMotion ? { opacity: 0.45 } : { x: [-12, 18, -12], y: [0, 12, 0], scale: [1, 1.06, 0.98, 1], opacity: [0.42, 0.7, 0.54, 0.42] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
         <motion.div {...motionProps} className="mx-auto max-w-7xl px-5 pb-20 pt-20 text-center sm:pb-24 sm:pt-28 lg:px-8 lg:pb-28">
           <p className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)]"><span className="size-1.5 rounded-full bg-[var(--accent)]" /> Built for intentional traders</p>
-          <h1 className="text-balance mx-auto max-w-4xl text-5xl font-medium tracking-[-0.06em] sm:text-6xl lg:text-8xl">Your trading. Your money. <span className="text-[var(--accent-light)]">Your discipline.</span></h1>
+          <motion.h1
+            className="text-balance mx-auto max-w-4xl text-5xl font-medium tracking-[-0.06em] sm:text-6xl lg:text-8xl"
+            initial={false}
+            animate={
+              reducedMotion
+                ? { color: "var(--text-primary)", textShadow: "0 0 0 rgba(201,168,118,0)" }
+                : {
+                    backgroundPosition: ["100% 50%", "25% 50%", "0% 50%", "100% 50%"],
+                    textShadow: [
+                      "0 0 0 rgba(201,168,118,0)",
+                      "0 0 10px rgba(201,168,118,0.18)",
+                      "0 0 18px rgba(201,168,118,0.28)",
+                      "0 0 10px rgba(201,168,118,0.18)",
+                    ],
+                  }
+            }
+            transition={
+              reducedMotion
+                ? undefined
+                : {
+                    duration: 20,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                  }
+            }
+            style={{
+              color: reducedMotion ? "var(--text-primary)" : "transparent",
+              backgroundImage:
+                "linear-gradient(90deg, var(--text-primary) 0%, var(--text-primary) 18%, #d7b36a 28%, #f3d58d 42%, #fffaf0 50%, #f3d58d 58%, #d7b36a 72%, var(--text-primary) 82%, var(--text-primary) 100%)",
+              backgroundSize: "260% 100%",
+              backgroundPosition: reducedMotion ? "0% 50%" : "100% 50%",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: reducedMotion ? "var(--text-primary)" : "transparent",
+              textShadow: reducedMotion ? "0 0 0 rgba(201,168,118,0)" : "0 0 10px rgba(201,168,118,0.18)",
+            }}
+          >
+            Your trading. Your money. <motion.span
+              initial={false}
+              animate={
+                reducedMotion
+                  ? { color: "var(--accent-light)", textShadow: "0 0 0 rgba(201,168,118,0)" }
+                  : {
+                      backgroundPosition: ["100% 50%", "25% 50%", "0% 50%", "100% 50%"],
+                      textShadow: [
+                        "0 0 0 rgba(201,168,118,0)",
+                        "0 0 10px rgba(201,168,118,0.2)",
+                        "0 0 18px rgba(201,168,118,0.28)",
+                        "0 0 10px rgba(201,168,118,0.2)",
+                      ],
+                    }
+              }
+              transition={
+                reducedMotion
+                  ? undefined
+                  : {
+                      duration: 12,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                    }
+              }
+              style={{
+                color: reducedMotion ? "var(--accent-light)" : "transparent",
+                display: "inline-block",
+                backgroundImage:
+                  "linear-gradient(90deg, var(--accent-light) 0%, var(--accent-light) 16%, #d9b77a 28%, #f5d992 42%, #fffaf1 50%, #f5d992 58%, #d9b77a 72%, var(--accent-light) 84%, var(--accent-light) 100%)",
+                backgroundSize: "260% 100%",
+                backgroundPosition: reducedMotion ? "0% 50%" : "100% 50%",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: reducedMotion ? "var(--accent-light)" : "transparent",
+                textShadow: reducedMotion ? "0 0 0 rgba(201,168,118,0)" : "0 0 10px rgba(201,168,118,0.18)",
+              }}
+              className="inline-block"
+            >
+              Your discipline.
+            </motion.span>
+          </motion.h1>
           <p className="mx-auto mt-7 max-w-2xl text-pretty text-base leading-7 text-[var(--text-secondary)] sm:text-lg">Meridian is the calm, complete record of how you trade and how you progress—one place to plan, record, review, and improve.</p>
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink href="#start" className="px-6">Get started <ArrowRight size={16} /></ButtonLink><ButtonLink secondary href="#features" className="px-6">Explore Meridian</ButtonLink></div>
+          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink href="#start" className="px-6">Get started <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink><ButtonLink secondary href="#features" className="px-6">Explore Meridian</ButtonLink></div>
           <p className="mt-5 text-xs text-[var(--text-muted)]">No broker connection required.</p>
           <ProductPreview />
         </motion.div>
       </section>
 
-      <section className="border-b border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:grid-cols-3 lg:px-8 lg:py-20">{[["PLAN", "Define the conditions that earn your risk."], ["RECORD", "Keep every decision and result in context."], ["IMPROVE", "Review patterns and strengthen your process."]].map(([label, text], index) => <div key={label} className="flex gap-4"><span className="font-mono text-sm text-[var(--accent)]">0{index + 1}</span><div><h2 className="text-sm font-semibold tracking-[0.14em]">{label}</h2><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{text}</p></div></div>)}</div></section>
+      <section className="border-b border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:grid-cols-3 lg:px-8 lg:py-20">{[["PLAN", "Define the conditions that earn your risk."], ["RECORD", "Keep every decision and result in context."], ["IMPROVE", "Review patterns and strengthen your process."]].map(([label, text], index) => <motion.div key={label} initial={reducedMotion ? false : { opacity: 0, y: 18 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }} className="flex gap-4"><motion.span initial={reducedMotion ? false : { opacity: 0, x: -8 }} whileInView={reducedMotion ? undefined : { opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: index * 0.08 + 0.05 }} className="font-mono text-sm text-[var(--accent)]">0{index + 1}</motion.span><motion.div initial={reducedMotion ? false : { opacity: 0, x: 8 }} whileInView={reducedMotion ? undefined : { opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: index * 0.08 + 0.12 }}><h2 className="text-sm font-semibold tracking-[0.14em]">{label}</h2><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{text}</p></motion.div></motion.div>)}</div></section>
 
-      <section id="features" className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading eyebrow="More than a trade journal" title="A clearer practice, built one record at a time." body="Meridian holds the information that matters after the chart is closed—not only what happened, but why." /></motion.div><div className="mt-12 grid gap-4 md:grid-cols-3">{features.map(({ icon: Icon, title, text }) => <motion.article {...motionProps} key={title} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-7"><span className="grid size-11 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]"><Icon size={20} /></span><h3 className="mt-8 text-xl font-medium tracking-[-0.03em]">{title}</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{text}</p></motion.article>)}</div></section>
+      <section id="features" className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading eyebrow="More than a trade journal" title="A clearer practice, built one record at a time." body="Meridian holds the information that matters after the chart is closed—not only what happened, but why." /></motion.div><div className="mt-12 grid gap-4 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <motion.article key={title} {...motionProps} transition={{ ...motionProps.transition, delay: index * 0.08 }} whileHover={reducedMotion ? undefined : { y: -8, scale: 1.01, borderColor: "rgba(201,168,118,0.38)", boxShadow: "0 16px 38px rgba(0,0,0,0.18), 0 0 0 1px rgba(201,168,118,0.12)" }} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-7"><motion.span whileHover={reducedMotion ? undefined : { rotate: 8, scale: 1.08, boxShadow: "0 0 18px rgba(201,168,118,0.28)" }} className="grid size-11 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)] transition-colors duration-300"><Icon size={20} /></motion.span><h3 className="mt-8 text-xl font-medium tracking-[-0.03em] transition-colors duration-300 hover:text-[var(--accent-light)]">{title}</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{text}</p></motion.article>)}</div></section>
 
       <section className="border-y border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading eyebrow="Trading accountability" title="A rule only matters when you can see whether you kept it." body="Create the rules that protect your edge. Use them before a trade, revisit them afterward, and discover where your process needs more attention." /><div className="mt-8 space-y-3">{["Confirm your pre-trade checklist", "Record what went well and what did not", "Review rule adherence over time"].map((item) => <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)]" key={item}><span className="grid size-5 place-items-center rounded-full bg-[rgba(201,168,118,0.14)] text-[var(--accent)]"><Check size={12} /></span>{item}</div>)}</div></motion.div><motion.div {...motionProps} className="rounded-2xl border border-[var(--border)] bg-[#0d0e12] p-5 sm:p-7"><div className="flex items-center justify-between border-b border-[var(--border-soft)] pb-5"><div><p className="text-sm font-medium">Pre-trade checklist</p><p className="mt-1 text-xs text-[var(--text-muted)]">Your process, before you commit.</p></div><ShieldCheck className="text-[var(--accent)]" size={21} /></div><div className="mt-5 space-y-2">{["Higher timeframe bias confirmed", "Risk is acceptable", "Stop loss is defined", "Setup meets my criteria"].map((item, index) => <div key={item} className="flex items-center justify-between rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3"><span className="text-sm text-[var(--text-secondary)]">{item}</span><span className={`size-4 rounded border ${index < 2 ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--text-muted)]"}`}>{index < 2 && <Check size={14} className="text-[#17130d]" />}</span></div>)}</div></motion.div></div></section>
 
-      <section id="how-it-works" className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Your daily command center" title="Less noise. More useful reflection." body="Every view begins with your own records. Meridian makes the next right action obvious, whether that is planning your day or reviewing last week." /></motion.div><div className="mt-12 grid gap-4 lg:grid-cols-3">{[[Target, "Plan with intention", "Set financial, trading, and habit goals that give the day shape."], [TrendingUp, "Record the full picture", "Log trades and financial activity as it happens, in your own words."], [BarChart3, "Review to improve", "Use your history to recognize stronger decisions and recurring mistakes."]].map(([Icon, title, text], index) => <motion.div {...motionProps} key={title} className="relative rounded-2xl border border-[var(--border)] p-6"><span className="font-mono text-xs text-[var(--accent)]">0{index + 1}</span><Icon className="mt-12 text-[var(--accent)]" size={24} /><h3 className="mt-5 text-lg font-medium">{title}</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{text}</p></motion.div>)}</div></section>
+      <section id="how-it-works" className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Your daily command center" title="Less noise. More useful reflection." body="Every view begins with your own records. Meridian makes the next right action obvious, whether that is planning your day or reviewing last week." /></motion.div><div className="mt-12 grid gap-4 lg:grid-cols-3">{[[Target, "Plan with intention", "Set financial, trading, and habit goals that give the day shape."], [TrendingUp, "Record the full picture", "Log trades and financial activity as it happens, in your own words."], [BarChart3, "Review to improve", "Use your history to recognize stronger decisions and recurring mistakes."]].map(([Icon, title, text], index) => <motion.div key={title} {...motionProps} transition={{ ...motionProps.transition, delay: index * 0.1 }} whileHover={reducedMotion ? undefined : { y: -6, borderColor: "rgba(201,168,118,0.4)", boxShadow: "0 14px 28px rgba(201,168,118,0.06)" }} className="relative rounded-2xl border border-[var(--border)] p-6"><motion.span initial={reducedMotion ? false : { opacity: 0, y: 10 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ duration: 0.45, delay: index * 0.1 }} className="font-mono text-xs text-[var(--accent)]">0{index + 1}</motion.span><motion.div initial={reducedMotion ? false : { opacity: 0, y: 12 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ duration: 0.45, delay: index * 0.1 + 0.08 }}><motion.div whileHover={reducedMotion ? undefined : { scale: 1.03 }} className="mt-12 inline-flex rounded-xl border border-[var(--border-soft)] bg-[rgba(201,168,118,0.04)] p-2.5 text-[var(--accent)]"><Icon size={24} /></motion.div><h3 className="mt-5 text-lg font-medium transition-colors duration-300 hover:text-[var(--accent-light)]">{title}</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{text}</p></motion.div></motion.div>)}</div></section>
 
-      <section id="pricing" className="border-y border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Simple by design" title="Start building a better record today." body="Meridian is being shaped carefully around the habits that make independent traders more intentional." /></motion.div><motion.div {...motionProps} className="mx-auto mt-12 max-w-md rounded-2xl border border-[rgba(201,168,118,0.5)] bg-[var(--surface-elevated)] p-7"><p className="text-sm font-medium text-[var(--accent)]">Early access</p><h3 className="mt-3 text-2xl font-medium tracking-[-0.03em]">Start tracking free</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">Begin with your trade records, rules, goals, and personal money tracking.</p><ul className="my-7 space-y-3">{["Your private trading journal", "Personal rules and checklists", "Income and expense records", "Goals and daily reviews"].map((item) => <li key={item} className="flex gap-3 text-sm text-[var(--text-secondary)]"><Check className="shrink-0 text-[var(--accent)]" size={17} />{item}</li>)}</ul><ButtonLink href="#start" className="w-full">Get early access <ArrowRight size={16} /></ButtonLink></motion.div></div></section>
+      <section id="pricing" className="border-y border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Simple by design" title="Start building a better record today." body="Meridian is being shaped carefully around the habits that make independent traders more intentional." /></motion.div><motion.div {...motionProps} whileHover={reducedMotion ? undefined : { y: -6, borderColor: "rgba(201,168,118,0.52)", boxShadow: "0 22px 38px rgba(201,168,118,0.08)" }} transition={{ duration: 0.25, ease: "easeOut" }} className="mx-auto mt-12 max-w-md rounded-2xl border border-[rgba(201,168,118,0.5)] bg-[var(--surface-elevated)] p-7"><p className="text-sm font-medium text-[var(--accent)]">Early access</p><h3 className="mt-3 text-2xl font-medium tracking-[-0.03em]">Start tracking free</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">Begin with your trade records, rules, goals, and personal money tracking.</p><ul className="my-7 space-y-3">{["Your private trading journal", "Personal rules and checklists", "Income and expense records", "Goals and daily reviews"].map((item) => <li key={item} className="flex gap-3 text-sm text-[var(--text-secondary)]"><Check className="shrink-0 text-[var(--accent)]" size={17} />{item}</li>)}</ul><ButtonLink href="#start" className="w-full">Get early access <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink></motion.div></div></section>
 
-      <section className="mx-auto max-w-3xl px-5 py-20 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Questions" title="A calmer way to keep track." /></motion.div><div className="mt-10 divide-y divide-[var(--border)] border-y border-[var(--border)]">{faqs.map(([question, answer]) => <details key={question} className="group py-1"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-sm font-medium marker:content-none">{question}<ChevronDown className="shrink-0 text-[var(--text-muted)] transition group-open:rotate-180" size={18} /></summary><p className="max-w-2xl pb-5 text-sm leading-6 text-[var(--text-secondary)]">{answer}</p></details>)}</div></section>
+      <section className="mx-auto max-w-3xl px-5 py-20 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Questions" title="A calmer way to keep track." /></motion.div><div className="mt-10 divide-y divide-[var(--border)] border-y border-[var(--border)]">{faqs.map(([question, answer]) => <details key={question} className="group py-1"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-sm font-medium marker:content-none transition-colors duration-300 group-hover:text-[var(--accent-light)]">{question}<ChevronDown className="shrink-0 text-[var(--text-muted)] transition-all duration-300 group-open:rotate-180 group-hover:text-[var(--accent)]" size={18} /></summary><p className="max-w-2xl pb-5 text-sm leading-6 text-[var(--text-secondary)]">{answer}</p></details>)}</div></section>
 
-      <section id="start" className="border-t border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto max-w-5xl px-5 py-20 text-center lg:py-28"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Your process deserves a place</p><h2 className="text-balance mx-auto mt-5 max-w-3xl text-4xl font-medium tracking-[-0.05em] sm:text-5xl">Trade with more intention. Review with more honesty.</h2><p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[var(--text-secondary)]">Build the record that helps you show up for your trading practice every day.</p><ButtonLink href="mailto:hello@meridian.app" className="mt-8 px-6">Start tracking free <ArrowRight size={16} /></ButtonLink></div></section>
+      <motion.section id="start" className="border-t border-[var(--border-soft)] bg-[var(--surface)]" initial={reducedMotion ? false : { opacity: 0, y: 24 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.55, ease: "easeOut" }}><div className="mx-auto max-w-5xl px-5 py-20 text-center lg:py-28"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Your process deserves a place</p><h2 className="text-balance mx-auto mt-5 max-w-3xl text-4xl font-medium tracking-[-0.05em] sm:text-5xl">Trade with more intention. Review with more honesty.</h2><p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[var(--text-secondary)]">Build the record that helps you show up for your trading practice every day.</p><ButtonLink href="mailto:hello@meridian.app" className="mt-8 px-6">Start tracking free <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink></div></motion.section>
 
-      <footer className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 sm:flex-row sm:items-center sm:justify-between lg:px-8"><a href="#top" className="flex items-center gap-2.5 font-semibold"><MeridianMark /> Meridian</a><p className="text-xs text-[var(--text-muted)]">Your trading. Your money. Your discipline.</p><div className="flex gap-5 text-xs text-[var(--text-secondary)]"><a href="#features" className="hover:text-[var(--text-primary)]">Features</a><a href="#pricing" className="hover:text-[var(--text-primary)]">Pricing</a></div></footer>
+      <footer className="mt-auto border-t border-[var(--border-soft)] bg-[var(--surface)]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-8 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+          <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</a>
+          <p className="text-xs text-[var(--text-muted)]">Your trading. Your money. Your discipline.</p>
+          <div className="flex gap-5 text-xs text-[var(--text-secondary)]">
+            <a href="#features" className="transition hover:text-[var(--text-primary)]">Features</a>
+            <a href="#pricing" className="transition hover:text-[var(--text-primary)]">Pricing</a>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

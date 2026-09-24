@@ -1,0 +1,42 @@
+.meridian-shimmer {
+  background: linear-gradient(
+    110deg,
+    var(--text-primary) 35%,
+    var(--accent) 50%,
+    var(--text-primary) 65%
+  );
+
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  animation: meridian-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes meridian-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+
+  50% {
+    background-position: -50% center;
+  }
+
+  100% {
+    background-position: -50% center;
+  }
+}
+.meridian-shimmer {
+  background: linear-gradient(
+    110deg,
+    var(--accent-light) 35%,
+    #ffffff 50%,
+    var(--accent-light) 65%
+  );
+
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

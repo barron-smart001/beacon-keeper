@@ -18,6 +18,8 @@ import {
 
 import { useEffect, useState } from "react";
 
+import { useNavigate } from "react-router-dom";
+
 import AppShell from "../components/app/AppShell";
 
 import { useAuth } from "../hooks/useAuth";
@@ -28,7 +30,8 @@ const inputClass =
   "mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3.5 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 function SettingsPage() {
-  const { user } = useAuth();
+  const { user, signOut: signOutFromAuth } = useAuth();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState({
     default_currency: "USD",
@@ -290,19 +293,23 @@ function SettingsPage() {
     if (isWorking) return;
 
     setIsWorking(true);
+    setNotice("");
 
-    const { error } = await supabase.auth.signOut();
+    try {
+      const { error } = await signOutFromAuth();
 
-    if (error) {
+      if (error) {
+        setNotice(
+          "We couldn't sign you out. Please try again."
+        );
+        return;
+      }
+
+      navigate("/sign-in", { replace: true });
+    } finally {
       setIsWorking(false);
       setModal(null);
-      setNotice(
-        "We couldn't sign you out. Please try again."
-      );
-      return;
     }
-
-    window.location.href = "/sign-in";
   }
 
   async function deleteAccount() {
@@ -350,14 +357,13 @@ function SettingsPage() {
         throw profileError;
       }
 
-      const { error: signOutError } =
-        await supabase.auth.signOut();
+      const { error: signOutError } = await signOutFromAuth();
 
       if (signOutError) {
         throw signOutError;
       }
 
-      window.location.href = "/sign-in";
+      navigate("/sign-in", { replace: true });
     } catch (error) {
       console.error("Account deletion failed:", error);
 
@@ -834,7 +840,7 @@ function SettingsPage() {
       {/* CONFIRMATION MODAL */}
       {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-end bg-black/70 p-0 sm:items-center sm:justify-center sm:p-6"
+          className="fixed inset-0 z-[120] flex items-end bg-black/70 p-0 sm:items-center sm:justify-center sm:p-6"
           role="dialog"
           aria-modal="true"
         >
@@ -842,40 +848,35 @@ function SettingsPage() {
             {/* Sign out modal */}
             {modal === "signout" && (
               <>
-                <div className="flex items-start justify-between gap-5">
-                  <div>
-                    <div className="grid size-11 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
-                      <LogOut size={19} />
-                    </div>
-
-                    <h2 className="mt-5 text-xl font-medium">
-                      Sign out of Meridian?
-                    </h2>
-
-                    <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                      You will be signed out of this device. Your
-                      trading records will remain safely stored in
-                      your Meridian account.
-                    </p>
-                  </div>
-
+                <div className="flex items-start justify-end">
                   <button
                     type="button"
                     onClick={closeModal}
                     disabled={isWorking}
-                    className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                    className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
                     aria-label="Close"
                   >
-                    <X size={17} />
+                    <X size={15} />
                   </button>
                 </div>
 
-                <div className="mt-7 flex justify-end gap-3">
+                <div className="mt-2">
+                  <h2 className="text-2xl font-semibold tracking-[-0.04em] text-white">
+                    Sign out?
+                  </h2>
+
+                  <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+                    You will be signed out of this device. Your trading
+                    records will remain safely stored in your Meridian account.
+                  </p>
+                </div>
+
+                <div className="mt-7 flex gap-3">
                   <button
                     type="button"
                     onClick={closeModal}
                     disabled={isWorking}
-                    className="min-h-11 rounded-full px-4 text-sm text-[var(--text-secondary)] disabled:opacity-50"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-[var(--border)] bg-transparent px-5 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface)] disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -884,13 +885,9 @@ function SettingsPage() {
                     type="button"
                     onClick={signOut}
                     disabled={isWorking}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-[#111318] transition hover:bg-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <LogOut size={16} />
-
-                    {isWorking
-                      ? "Signing out..."
-                      : "Sign out"}
+                    {isWorking ? "Signing out..." : "Sign out"}
                   </button>
                 </div>
               </>
