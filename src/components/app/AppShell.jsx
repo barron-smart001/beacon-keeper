@@ -1,5 +1,6 @@
 import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, Goal, LayoutDashboard, LogOut, Menu, Settings, X } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import MeridianMark from "../ui/MeridianMark";
 import { useAuth } from "../../hooks/useAuth";
@@ -80,8 +81,8 @@ function AppShell({ children }) {
       </div>
     </div>
 
-      {showSignOutConfirm && (
-        <div className="fixed inset-0 z-[120] flex items-end bg-black/75 p-0 sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
+      {showSignOutConfirm && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-end bg-black/75 p-0 sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
           <div className="w-full max-w-md rounded-t-2xl border border-[var(--border)] bg-[#111318] p-5 shadow-2xl sm:rounded-2xl sm:p-6">
             <div className="flex items-start justify-end">
               <button
@@ -119,7 +120,8 @@ function AppShell({ children }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

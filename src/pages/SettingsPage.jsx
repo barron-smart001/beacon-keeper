@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { useNavigate } from "react-router-dom";
 
@@ -838,9 +839,9 @@ function SettingsPage() {
       </main>
 
       {/* CONFIRMATION MODAL */}
-      {modal && (
+      {modal && createPortal(
         <div
-          className="fixed inset-0 z-[120] flex items-end bg-black/70 p-0 sm:items-center sm:justify-center sm:p-6"
+          className="fixed inset-0 z-[200] flex items-end bg-black/70 p-0 sm:items-center sm:justify-center sm:p-6"
           role="dialog"
           aria-modal="true"
         >
@@ -1012,7 +1013,8 @@ function SettingsPage() {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </AppShell>
   );
