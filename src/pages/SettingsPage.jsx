@@ -2,8 +2,6 @@ import {
   Bell,
   Check,
   ChevronRight,
-  Database,
-  Download,
   LogOut,
   Mail,
   Moon,
@@ -22,8 +20,10 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
 import AppShell from "../components/app/AppShell";
+import UpgradeModal from "../components/subscription/UpgradeModal";
 
 import { useAuth } from "../hooks/useAuth";
+import useSubscription from "../hooks/useSubscription";
 
 import { supabase } from "../lib/supabase";
 
@@ -33,6 +33,7 @@ const inputClass =
 function SettingsPage() {
   const { user, signOut: signOutFromAuth } = useAuth();
   const navigate = useNavigate();
+  const { isSubscribed, isLoading: subscriptionLoading } = useSubscription();
 
   const [profile, setProfile] = useState({
     default_currency: "USD",
@@ -42,10 +43,10 @@ function SettingsPage() {
   const [accounts, setAccounts] = useState([]);
   const [accountName, setAccountName] = useState("");
   const [notice, setNotice] = useState("");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [modal, setModal] = useState(null);
   const [isWorking, setIsWorking] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -122,6 +123,13 @@ function SettingsPage() {
   async function addAccount(event) {
     event.preventDefault();
 
+    if (subscriptionLoading) return;
+
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     const name = accountName.trim();
 
     if (!name) return;
@@ -148,116 +156,6 @@ function SettingsPage() {
     setAccounts((current) => [data, ...current]);
     setAccountName("");
     setNotice("Account added.");
-  }
-
-  async function exportData() {
-    if (!user?.id || isExporting) return;
-
-    setIsExporting(true);
-    setNotice("");
-
-    try {
-      const [
-        profileResult,
-        accountsResult,
-        rulesResult,
-        tradesResult,
-        moneyResult,
-        goalsResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle(),
-
-        supabase
-          .from("accounts")
-          .select("*")
-          .eq("user_id", user.id),
-
-        supabase
-          .from("trading_rules")
-          .select("*")
-          .eq("user_id", user.id),
-
-        supabase
-          .from("trades")
-          .select("*")
-          .eq("user_id", user.id),
-
-        supabase
-          .from("money_transactions")
-          .select("*")
-          .eq("user_id", user.id),
-
-        supabase
-          .from("goals")
-          .select("*")
-          .eq("user_id", user.id),
-      ]);
-
-      const failed =
-        profileResult.error ||
-        accountsResult.error ||
-        rulesResult.error ||
-        tradesResult.error ||
-        moneyResult.error ||
-        goalsResult.error;
-
-      if (failed) {
-        throw new Error("Export query failed.");
-      }
-
-      const exportDataObject = {
-        exported_at: new Date().toISOString(),
-        account: {
-          email: user.email || null,
-          user_id: user.id,
-        },
-        profile: profileResult.data || null,
-        accounts: accountsResult.data || [],
-        trading_rules: rulesResult.data || [],
-        trades: tradesResult.data || [],
-        money_transactions: moneyResult.data || [],
-        goals: goalsResult.data || [],
-      };
-
-      const json = JSON.stringify(
-        exportDataObject,
-        null,
-        2
-      );
-
-      const blob = new Blob([json], {
-        type: "application/json",
-      });
-
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = `meridian-data-${new Date()
-        .toISOString()
-        .slice(0, 10)}.json`;
-
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      URL.revokeObjectURL(url);
-
-      setNotice("Your Meridian data has been exported.");
-    } catch (error) {
-      console.error("Data export failed:", error);
-
-      setNotice(
-        "We couldn't export your data. Please try again."
-      );
-    } finally {
-      setIsExporting(false);
-    }
   }
 
   async function sendPasswordReset() {
@@ -697,37 +595,6 @@ function SettingsPage() {
               </span>
             </div>
 
-            {/* Export */}
-            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-              <div className="flex items-center gap-4">
-                <div className="grid size-10 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
-                  <Database size={18} />
-                </div>
-
-                <div>
-                  <h2 className="text-sm font-medium">
-                    Data & privacy
-                  </h2>
-
-                  <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-                    Download a copy of your Meridian records.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={exportData}
-                disabled={isExporting}
-                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[var(--border)] px-4 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Download size={14} />
-
-                {isExporting
-                  ? "Preparing..."
-                  : "Export data"}
-              </button>
-            </div>
           </article>
         </section>
 
@@ -1016,6 +883,11 @@ function SettingsPage() {
         </div>,
         document.body
       )}
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </AppShell>
   );
 }

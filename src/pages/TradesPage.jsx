@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppShell from "../components/app/AppShell";
+import UpgradeModal from "../components/subscription/UpgradeModal";
 import { useAuth } from "../hooks/useAuth";
+import useSubscription from "../hooks/useSubscription";
 import { supabase } from "../lib/supabase";
 
 const initialForm = {
@@ -324,8 +326,10 @@ function TradesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteConfirmTrade, setDeleteConfirmTrade] = useState(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const { user } = useAuth();
+  const { isSubscribed, isLoading } = useSubscription();
 
   function showToast(message, type = "success") {
     setNotice(message);
@@ -375,11 +379,23 @@ function TradesPage() {
   }, [user?.id]);
 
   function openNewTrade() {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setEditingTrade(null);
     setFormOpen(true);
   }
 
   function openEditTrade(trade) {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     if (trade.edit_count >= 1) {
       showToast(
         "This trade has already been edited and is now locked.",
@@ -486,6 +502,12 @@ function TradesPage() {
   }
 
   function deleteTrade(trade) {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     if (trade.edit_count >= 1) {
       showToast(
         "This trade has already been edited and cannot be deleted.",
@@ -498,6 +520,12 @@ function TradesPage() {
   }
 
   async function confirmDeleteTrade() {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     if (!deleteConfirmTrade || !user?.id) return;
 
     const trade = deleteConfirmTrade;
@@ -821,6 +849,11 @@ function TradesPage() {
           </div>
         </div>
       )}
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </AppShell>
   );
 }

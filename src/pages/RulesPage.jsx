@@ -14,8 +14,10 @@ import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 
 import AppShell from "../components/app/AppShell";
+import UpgradeModal from "../components/subscription/UpgradeModal";
 
 import { useAuth } from "../hooks/useAuth";
+import useSubscription from "../hooks/useSubscription";
 
 import { supabase } from "../lib/supabase";
 
@@ -35,6 +37,9 @@ function RulesPage() {
   const [editingId, setEditingId] = useState(null);
   const [notice, setNotice] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const { isSubscribed, isLoading } = useSubscription();
 
   useEffect(() => {
     let mounted = true;
@@ -67,12 +72,24 @@ function RulesPage() {
   }, [user?.id]);
 
   function openCreate() {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setDraft("");
     setEditingId(null);
     setIsFormOpen(true);
   }
 
   function openEdit(rule) {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setDraft(rule.description);
     setEditingId(rule.id);
     setIsFormOpen(true);
@@ -80,6 +97,12 @@ function RulesPage() {
 
   async function saveRule(event) {
     event.preventDefault();
+
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
     const description = draft.trim();
 
@@ -119,6 +142,12 @@ function RulesPage() {
   }
 
   async function deleteRule(id) {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setNotice("");
 
     const { error } = await supabase
@@ -571,6 +600,11 @@ function RulesPage() {
           </form>
         </div>
       )}
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </AppShell>
   );
 }

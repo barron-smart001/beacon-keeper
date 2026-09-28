@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, Goal, LayoutDashboard, LogOut, Menu, Settings, X } from "lucide-react";
+import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, Goal, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -10,8 +10,10 @@ const navigation = [
   [LayoutDashboard, "Overview", "/app"],
   [ClipboardCheck, "Trades", "/app/trades"],
   [CircleDollarSign, "Money", "/app/money"],
+  [ShieldCheck, "Rules", "/app/rules"],
   [Goal, "Goals", "/app/goals"],
   [CalendarDays, "Calendar", "/app/calendar"],
+  [CreditCard, "Billing & payments", "/app/billing"],
 ];
 
 function Navigation({ closeMenu, onRequestSignOut }) {

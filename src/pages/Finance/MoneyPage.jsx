@@ -15,6 +15,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "../../components/app/AppShell";
+import UpgradeModal from "../../components/subscription/UpgradeModal";
+import useSubscription from "../../hooks/useSubscription";
 import { supabase } from "../../lib/supabase";
 
 const EMPTY_FORM = {
@@ -37,9 +39,12 @@ const MoneyPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
+
+  const { isSubscribed, isLoading } = useSubscription();
 
   // ---------------------------------------------------------
   // LOAD USER DATA
@@ -152,6 +157,12 @@ const MoneyPage = () => {
   // ---------------------------------------------------------
 
   function openCreateModal() {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setEditingTransaction(null);
 
     setFormData({
@@ -164,6 +175,12 @@ const MoneyPage = () => {
   }
 
   function openEditModal(transaction) {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setEditingTransaction(transaction);
 
     setFormData({
@@ -207,6 +224,12 @@ const MoneyPage = () => {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
     const amount = Number(formData.amount);
 
@@ -316,6 +339,12 @@ const MoneyPage = () => {
   // ---------------------------------------------------------
 
   async function deleteTransaction(transaction) {
+    if (isLoading) return;
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     const shouldDelete = window.confirm(
       `Delete this ${transaction.type} transaction?`
     );
@@ -552,6 +581,11 @@ const MoneyPage = () => {
           onSubmit={handleSubmit}
         />
       )}
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </AppShell>
   );
 };
