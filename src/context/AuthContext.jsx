@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
     let isMounted = true;
 
     supabase.auth.getSession().then(({ data, error }) => {
-      if (error) console.error("Unable to restore the Meridian session.", error);
+      if (error) console.error("Unable to restore the Recordium session.", error);
       if (isMounted) {
         setSession(data.session ?? null);
         setIsLoading(false);

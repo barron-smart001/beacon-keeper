@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, Check, ShieldCheck, WalletCards } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import MeridianMark from "../components/ui/MeridianMark";
+import RecordiumMark from "../components/ui/RecordiumMark";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 
@@ -28,33 +28,76 @@ function OnboardingPage() {
     }
     setIsSaving(true);
     setNotice("");
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      trading_style: form.style,
-      default_currency: form.currency,
-      onboarding_completed: true,
-    });
-    if (!profileError) {
-      const { error: accountError } = await supabase.from("accounts").insert({ user_id: user.id, name: form.account, currency: form.currency });
-      if (!accountError) {
-        const { error: ruleError } = await supabase.from("trading_rules").insert({ user_id: user.id, description: form.rule });
-        if (!ruleError) {
-          setNotice("Your setup is ready. Your first account and rule have been saved.");
-          setIsSaving(false);
-          return;
-        }
+    try {
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: user.id,
+        trading_style: form.style,
+        default_currency: form.currency,
+        onboarding_completed: false,
+      });
+      if (profileError) throw profileError;
+
+      const { data: existingAccount, error: accountLookupError } =
+        await supabase
+          .from("accounts")
+          .select("id")
+          .eq("user_id", user.id)
+          .limit(1)
+          .maybeSingle();
+      if (accountLookupError) throw accountLookupError;
+      if (!existingAccount) {
+        const { error: accountError } = await supabase
+          .from("accounts")
+          .insert({
+            user_id: user.id,
+            name: form.account,
+            currency: form.currency,
+          });
+        if (accountError) throw accountError;
       }
+
+      const { data: existingRule, error: ruleLookupError } = await supabase
+        .from("trading_rules")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      if (ruleLookupError) throw ruleLookupError;
+      if (!existingRule) {
+        const { error: ruleError } = await supabase
+          .from("trading_rules")
+          .insert({
+            user_id: user.id,
+            description: form.rule,
+          });
+        if (ruleError) throw ruleError;
+      }
+
+      const { error: completeProfileError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          trading_style: form.style,
+          default_currency: form.currency,
+          onboarding_completed: true,
+        });
+      if (completeProfileError) throw completeProfileError;
+
+      setNotice("Your setup is ready. Your first account and rule have been saved.");
+    } catch (error) {
+      console.error("Unable to complete onboarding:", error);
+      setNotice("We couldn't save your setup. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
-    setNotice("We couldn't save your setup. Please try again.");
   }
 
   const content = [
     {
       eyebrow: "Step 1 of 3",
-      title: "Shape Meridian around your practice.",
+      title: "Shape Recordium around your practice.",
       body: "Start with the details that make your records clearer. You can adjust these later.",
-      fields: <><label className="block text-sm font-medium">Trading style<select required name="style" value={form.style} onChange={updateField} className={inputClass}><option value="">Select your primary style</option><option value="Forex">Forex</option><option value="Day trading">Day trading</option><option value="Scalping">Scalping</option><option value="Swing trading">Swing trading</option><option value="Position trading">Position trading</option><option value="Other">Other</option></select></label><label className="mt-5 block text-sm font-medium">Default currency<select name="currency" value={form.currency} onChange={updateField} className={inputClass}><option value="USD">USD — US dollar</option><option value="NGN">NGN — Nigerian naira</option><option value="GBP">GBP — British pound</option><option value="EUR">EUR — Euro</option></select><span className="mt-2 block text-xs leading-5 text-[var(--text-muted)]">Meridian will not convert currencies or assume exchange rates.</span></label></>,
+      fields: <><label className="block text-sm font-medium">Trading style<select required name="style" value={form.style} onChange={updateField} className={inputClass}><option value="">Select your primary style</option><option value="Forex">Forex</option><option value="Day trading">Day trading</option><option value="Scalping">Scalping</option><option value="Swing trading">Swing trading</option><option value="Position trading">Position trading</option><option value="Other">Other</option></select></label><label className="mt-5 block text-sm font-medium">Default currency<select name="currency" value={form.currency} onChange={updateField} className={inputClass}><option value="USD">USD — US dollar</option><option value="NGN">NGN — Nigerian naira</option><option value="GBP">GBP — British pound</option><option value="EUR">EUR — Euro</option></select><span className="mt-2 block text-xs leading-5 text-[var(--text-muted)]">Recordium will not convert currencies or assume exchange rates.</span></label></>,
     },
     {
       eyebrow: "Step 2 of 3",
@@ -65,7 +108,7 @@ function OnboardingPage() {
     {
       eyebrow: "Step 3 of 3",
       title: "Start with one rule you trust.",
-      body: "A good rule is specific and observable. Meridian will help you review it before and after your trades.",
+      body: "A good rule is specific and observable. Recordium will help you review it before and after your trades.",
       fields: <><label className="block text-sm font-medium">Your first trading rule<textarea required name="rule" value={form.rule} onChange={updateField} rows="4" className={inputClass} placeholder="e.g. Risk no more than 1% on a single trade" /></label><div className="mt-5 flex gap-3 rounded-xl border border-[rgba(201,168,118,0.22)] bg-[rgba(201,168,118,0.07)] p-4"><ShieldCheck className="shrink-0 text-[var(--accent)]" size={19} /><p className="text-xs leading-5 text-[var(--text-secondary)]">The most useful rules describe an action you can confirm, not an outcome you cannot control.</p></div></>,
     },
   ][step];
@@ -73,7 +116,7 @@ function OnboardingPage() {
   return (
     <main className="min-h-screen bg-[var(--bg)] px-5 py-7 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-5xl">
-        <header className="flex items-center justify-between"><Link to="/" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</Link><Link to="/" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Finish later</Link></header>
+        <header className="flex items-center justify-between"><Link to="/" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><RecordiumMark /> Recordium</Link><Link to="/" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Finish later</Link></header>
         <div className="mx-auto mt-14 max-w-xl sm:mt-20">
           <ol className="mb-12 flex items-center" aria-label="Onboarding progress">{steps.map((label, index) => <li key={label} className="flex flex-1 items-center last:flex-none"><span className={`grid size-7 place-items-center rounded-full border text-xs font-semibold ${index < step ? "border-[var(--accent)] bg-[var(--accent)] text-[#17130d]" : index === step ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>{index < step ? <Check size={14} /> : index + 1}</span>{index < steps.length - 1 && <span className={`mx-2 h-px flex-1 ${index < step ? "bg-[var(--accent)]" : "bg-[var(--border)]"}`} />}</li>)}</ol>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{content.eyebrow}</p>

@@ -1,4 +1,4 @@
-.meridian-shimmer {
+.recordium-shimmer {
   background: linear-gradient(
     110deg,
     var(--text-primary) 35%,
@@ -11,10 +11,10 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
 
-  animation: meridian-shimmer 4s ease-in-out infinite;
+  animation: recordium-shimmer 4s ease-in-out infinite;
 }
 
-@keyframes meridian-shimmer {
+@keyframes recordium-shimmer {
   0% {
     background-position: 200% center;
   }
@@ -27,7 +27,7 @@
     background-position: -50% center;
   }
 }
-.meridian-shimmer {
+.recordium-shimmer {
   background: linear-gradient(
     110deg,
     var(--accent-light) 35%,

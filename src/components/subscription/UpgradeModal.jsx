@@ -61,7 +61,7 @@ function UpgradeModal({ isOpen, onClose }) {
                 </h2>
 
                 <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
-                  Subscribe to Meridian Pro to record and manage your trading activity.
+                  Subscribe to Recordium Pro to record and manage your trading activity.
                 </p>
               </div>
 
@@ -79,7 +79,7 @@ function UpgradeModal({ isOpen, onClose }) {
                   onClick={handleSubscribe}
                   className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--accent)] px-4 text-sm font-semibold text-[#17130d] transition-transform duration-200 hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                 >
-                  Subscribe to Meridian
+                  Subscribe to Recordium
                 </button>
               </div>
             </div>

@@ -194,7 +194,7 @@ function RulesPage() {
       // Header
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(22);
-      pdf.text("Meridian", margin, y);
+      pdf.text("Recordium", margin, y);
 
       y += 8;
 
@@ -289,7 +289,7 @@ function RulesPage() {
         pdf.setTextColor(150, 150, 150);
 
         pdf.text(
-          "Created with Meridian",
+          "Created with Recordium",
           margin,
           pageHeight - 12
         );
@@ -304,7 +304,7 @@ function RulesPage() {
         );
       }
 
-      pdf.save("meridian-trading-rules.pdf");
+      pdf.save("recordium-trading-rules.pdf");
     } catch (error) {
       console.error("PDF generation failed:", error);
 
@@ -385,7 +385,7 @@ function RulesPage() {
 
               <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
                 Start with one rule you can confirm before or after a
-                trade. Meridian will use these records to calculate
+                trade. Recordium will use these records to calculate
                 adherence once rule tracking is connected.
               </p>
 
@@ -462,7 +462,7 @@ function RulesPage() {
                     <p className="mt-1 text-xs text-[var(--text-muted)]">
                       {rules.length}{" "}
                       {rules.length === 1 ? "rule" : "rules"} saved
-                      to your Meridian account.
+                      to your Recordium account.
                     </p>
                   </div>
                 </div>

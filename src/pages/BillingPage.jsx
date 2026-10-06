@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import AppShell from "../components/app/AppShell";
 import { useAuth } from "../hooks/useAuth";
@@ -16,24 +16,24 @@ import { supabase } from "../lib/supabase";
 
 const faqs = [
   {
-    question: "What is Meridian Pro?",
+    question: "What is Recordium Pro?",
     answer:
-      "Meridian Pro is the only paid plan and unlocks the full analytics, financial tracking, and advanced trading insights in Meridian.",
+      "Recordium Pro unlocks the full analytics, financial tracking, and advanced trading insights in Recordium.",
   },
   {
     question: "What happens when I subscribe?",
     answer:
-      "Your Meridian Pro access is activated after the payment flow is successfully completed and confirmed.",
+      "Your Recordium Pro access is activated after the payment flow is successfully completed and confirmed.",
   },
   {
     question: "Can I cancel my subscription?",
     answer:
-      "Yes. Subscription management will be available in billing settings once the payment integration is ready.",
+      "Plans are one-time payments and do not renew automatically. Your paid access remains available until its expiry date.",
   },
   {
     question: "Will my trading data remain intact?",
     answer:
-      "Yes. Your records remain tied to your Meridian account regardless of subscription status.",
+      "Yes. Your records remain tied to your Recordium account regardless of subscription status.",
   },
 ];
 
@@ -133,7 +133,49 @@ function PricingCard({
   );
 }
 
-function BillingHistory() {
+function BillingHistory({ userId, refreshToken }) {
+  const [payments, setPayments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPaymentHistory() {
+      setIsLoading(true);
+
+      if (!userId) {
+        setPayments([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("payment_transactions")
+        .select("reference, amount, currency, status, paid_at, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error("Unable to load payment history:", error);
+        setErrorMessage("Payment history could not be loaded right now.");
+        setPayments([]);
+      } else {
+        setPayments(data || []);
+        setErrorMessage("");
+      }
+      setIsLoading(false);
+    }
+
+    void loadPaymentHistory();
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshToken, userId]);
+
   return (
     <section className="mt-10">
       <div className="mb-4">
@@ -141,14 +183,54 @@ function BillingHistory() {
       </div>
 
       <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
-        <div className="flex min-h-[180px] items-center justify-center text-center">
-          <div className="max-w-md">
-            <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
-              <CreditCard size={18} />
+        {isLoading ? (
+          <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
+            Loading payment history...
+          </p>
+        ) : errorMessage ? (
+          <p role="alert" className="py-8 text-center text-sm text-[var(--text-secondary)]">
+            {errorMessage}
+          </p>
+        ) : payments.length === 0 ? (
+          <div className="flex min-h-[180px] items-center justify-center text-center">
+            <div className="max-w-md">
+              <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
+                <CreditCard size={18} />
+              </div>
+              <p className="text-base font-medium text-[var(--text-primary)]">
+                Your payment history will appear here after your first payment.
+              </p>
             </div>
-            <p className="text-base font-medium text-[var(--text-primary)]">Your payment history will appear here once you make your first payment.</p>
           </div>
-        </div>
+        ) : (
+          <ul className="divide-y divide-[var(--border-soft)]">
+            {payments.map((payment) => (
+              <li
+                key={payment.reference}
+                className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+              >
+                <div>
+                  <p className="text-sm font-medium capitalize text-[var(--text-primary)]">
+                    {payment.status}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    {new Date(payment.paid_at || payment.created_at).toLocaleDateString(
+                      "en-NG",
+                      { day: "2-digit", month: "short", year: "numeric" }
+                    )}
+                  </p>
+                </div>
+                <p className="text-sm font-medium text-[var(--text-primary)]">
+                  {new Intl.NumberFormat("en-NG", {
+                    style: "currency",
+                    currency: payment.currency || "NGN",
+                    maximumFractionDigits: 2,
+                  }).format(Number(payment.amount))}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );
@@ -214,12 +296,14 @@ function BillingFAQ() {
 
 function BillingPage() {
   const { user } = useAuth();
-  const { subscription, isSubscribed, isLoading } = useSubscription();
+  const { subscription, isSubscribed, isLoading, refresh } = useSubscription();
   const [isInitializingCheckout, setIsInitializingCheckout] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState(null);
+  const [paymentHistoryVersion, setPaymentHistoryVersion] = useState(0);
   const [notice, setNotice] = useState("");
 
-  async function verifyPaystackReference(reference) {
+  const verifyPaystackReference = useCallback(async (reference) => {
     if (!reference) return;
 
     setIsVerifyingPayment(true);
@@ -238,7 +322,7 @@ function BillingPage() {
       const accessToken = session?.access_token;
 
       if (!accessToken) {
-        throw new Error("Your Meridian session is no longer active. Please sign in again.");
+        throw new Error("Your Recordium session is no longer active. Please sign in again.");
       }
 
       const response = await fetch("/api/paystack/verify", {
@@ -258,12 +342,35 @@ function BillingPage() {
         );
       }
 
+      const currentSubscription = await refresh();
+      if (!currentSubscription) {
+        throw new Error(
+          "Paystack verified the payment, but the subscription could not be refreshed. Please reload this page."
+        );
+      }
+
+      const expiryTime = currentSubscription.expiresAt
+        ? new Date(currentSubscription.expiresAt).getTime()
+        : null;
+      const hasValidExpiry =
+        expiryTime === null ||
+        (Number.isFinite(expiryTime) && expiryTime > Date.now());
+      if (
+        currentSubscription.status !== "active" ||
+        currentSubscription.plan !== "pro" ||
+        !hasValidExpiry
+      ) {
+        throw new Error(
+          "Payment was verified, but the profile does not yet show active Recordium Pro access. Please retry verification."
+        );
+      }
+
       const url = new URL(window.location.href);
       url.searchParams.delete("reference");
       window.history.replaceState({}, "", url.toString());
 
-      setNotice("Payment successful. Welcome to Meridian Pro.");
-      window.location.reload();
+      setNotice("Payment successful. Welcome to Recordium Pro.");
+      setPaymentHistoryVersion((version) => version + 1);
     } catch (error) {
       setNotice(
         error instanceof Error
@@ -273,12 +380,13 @@ function BillingPage() {
     } finally {
       setIsVerifyingPayment(false);
     }
-  }
+  }, [refresh]);
 
-  async function handleUpgrade() {
-    if (isSubscribed || isInitializingCheckout) return;
+  async function handleUpgrade(planId) {
+    if (isInitializingCheckout || isVerifyingPayment) return;
 
     setIsInitializingCheckout(true);
+    setCheckoutPlan(planId);
     setNotice("");
 
     try {
@@ -298,7 +406,7 @@ function BillingPage() {
       const accessToken = session?.access_token;
 
       if (!accessToken) {
-        throw new Error("Your Meridian session is no longer active. Please sign in again.");
+        throw new Error("Your Recordium session is no longer active. Please sign in again.");
       }
 
       const response = await fetch("/api/paystack/initialize", {
@@ -307,7 +415,7 @@ function BillingPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ plan: planId }),
       });
 
       const payload = await response.json();
@@ -327,6 +435,7 @@ function BillingPage() {
       );
     } finally {
       setIsInitializingCheckout(false);
+      setCheckoutPlan(null);
     }
   }
 
@@ -336,9 +445,9 @@ function BillingPage() {
     if (reference) {
       verifyPaystackReference(reference);
     }
-  }, []);
+  }, [verifyPaystackReference]);
 
-  const planName = isSubscribed ? "Meridian Pro" : "No active plan";
+  const planName = isSubscribed ? "Recordium Pro" : "No active plan";
   const statusText = isSubscribed ? "Active" : "Not subscribed";
   const billingText = isLoading
     ? "Checking subscription..."
@@ -398,7 +507,7 @@ function BillingPage() {
               transition={{ duration: 0.5, ease: "easeOut", delay: 0.18 }}
               className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base"
             >
-              Meridian Pro gives you the tools to trade with more clarity, focus, and control.
+              Recordium Pro gives you the tools to trade with more clarity, focus, and control.
             </motion.p>
           </div>
         </motion.section>
@@ -408,6 +517,16 @@ function BillingPage() {
             <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
               {notice}
             </div>
+          </section>
+        )}
+
+        {isVerifyingPayment && (
+          <section
+            className="mt-6 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]"
+            role="status"
+            aria-live="polite"
+          >
+            Verifying your payment with Paystack...
           </section>
         )}
 
@@ -447,28 +566,53 @@ function BillingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Choose your plan</p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-1">
-            <PricingCard
-              title="Meridian Pro"
-              price="₦18,000 / month"
-              label="The complete Meridian experience for serious traders"
-              features={proFeatures}
-              ctaText={
-                isInitializingCheckout
-                  ? "Starting checkout..."
-                  : isSubscribed
-                    ? "Current plan"
-                    : "Subscribe to Meridian Pro"
-              }
-              onClick={handleUpgrade}
-              disabled={isSubscribed || isInitializingCheckout}
-              featured
-              delay={0.15}
-            />
+          <div className="grid gap-5 md:grid-cols-3">
+            {[
+              {
+                id: "monthly",
+                title: "Monthly",
+                price: "₦5,000",
+                label: "₦5,000 / month",
+              },
+              {
+                id: "quarterly",
+                title: "3 Months",
+                price: "₦12,000",
+                label: "₦12,000 / 3 months",
+              },
+              {
+                id: "yearly",
+                title: "1 Year",
+                price: "₦36,000",
+                label: "₦36,000 / year",
+              },
+            ].map((plan, index) => (
+              <PricingCard
+                key={plan.id}
+                title={plan.title}
+                price={plan.price}
+                label={plan.label}
+                features={proFeatures}
+                ctaText={
+                  isInitializingCheckout && checkoutPlan === plan.id
+                    ? "Starting checkout..."
+                    : isSubscribed
+                      ? "Extend Recordium Pro"
+                      : "Choose Recordium Pro"
+                }
+                onClick={() => handleUpgrade(plan.id)}
+                disabled={isInitializingCheckout || isVerifyingPayment}
+                featured={plan.id === "yearly"}
+                delay={0.1 + index * 0.08}
+              />
+            ))}
           </div>
         </section>
 
-        <BillingHistory />
+        <BillingHistory
+          userId={user?.id}
+          refreshToken={paymentHistoryVersion}
+        />
 
         <section className="mt-10">
           <div className="mb-4">

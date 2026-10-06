@@ -1,10 +1,10 @@
-# MERIDIAN — AGENTS.md
+# RECORDIUM — AGENTS.md
 
 ## 1. ROLE
 
-You are the engineering agent responsible for building and maintaining Meridian.
+You are the engineering agent responsible for building and maintaining Recordium.
 
-Meridian is a premium trader financial record-keeping, trading journal, accountability, and performance platform.
+Recordium is a premium trader financial record-keeping, trading journal, accountability, and performance platform.
 
 You are expected to behave like a senior production engineer.
 
@@ -45,7 +45,7 @@ If the two documents conflict, stop and explain the conflict before making a maj
 
 # 3. PRODUCT IDENTITY
 
-Meridian is NOT:
+Recordium is NOT:
 
 - A Bloomberg clone
 - A TradingView clone
@@ -55,7 +55,7 @@ Meridian is NOT:
 - An AI-first trading application
 - An economic calendar application
 
-Meridian IS:
+Recordium IS:
 
 - A premium trading journal
 - A trader accountability system
@@ -98,7 +98,7 @@ Do not silently implement it.
 
 # 5. EXISTING DESIGN SYSTEM
 
-Preserve the Meridian visual identity.
+Preserve the Recordium visual identity.
 
 Primary background:
 

@@ -1,81 +1,86 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "./useAuth";
 import { supabase } from "../lib/supabase";
 
+const INACTIVE_SUBSCRIPTION = {
+  status: "inactive",
+  plan: null,
+  startedAt: null,
+  expiresAt: null,
+};
+
+function normalizeSubscription(profile) {
+  return {
+    status: profile?.subscription_status || "inactive",
+    plan: profile?.subscription_plan || null,
+    startedAt: profile?.subscription_started_at || null,
+    expiresAt: profile?.subscription_expires_at || null,
+  };
+}
+
 function useSubscription() {
   const { user } = useAuth();
-
-  const [subscription, setSubscription] = useState({
-    status: "inactive",
-    plan: null,
-    startedAt: null,
-    expiresAt: null,
-  });
-
+  const userId = user?.id;
+  const requestId = useRef(0);
+  const [subscription, setSubscription] = useState(INACTIVE_SUBSCRIPTION);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
+  const refresh = useCallback(async () => {
+    const currentRequestId = ++requestId.current;
+    if (!userId) {
+      setSubscription(INACTIVE_SUBSCRIPTION);
+      setIsLoading(false);
+      return INACTIVE_SUBSCRIPTION;
+    }
 
-    async function loadSubscription() {
-      if (!user) {
-        if (mounted) {
-          setSubscription({
-            status: "inactive",
-            plan: null,
-            startedAt: null,
-            expiresAt: null,
-          });
+    setIsLoading(true);
 
-          setIsLoading(false);
-        }
-
-        return;
-      }
-
+    try {
       const { data, error } = await supabase
         .from("profiles")
         .select(
           "subscription_status, subscription_plan, subscription_started_at, subscription_expires_at"
         )
-        .eq("id", user.id)
-        .single();
-
-      if (!mounted) return;
+        .eq("id", userId)
+        .maybeSingle();
 
       if (error) {
-        console.error("Error loading subscription:", error);
-
-        setSubscription({
-          status: "inactive",
-          plan: null,
-          startedAt: null,
-          expiresAt: null,
-        });
-      } else {
-        setSubscription({
-          status: data?.subscription_status || "inactive",
-          plan: data?.subscription_plan || null,
-          startedAt: data?.subscription_started_at || null,
-          expiresAt: data?.subscription_expires_at || null,
-        });
+        throw error;
       }
 
-      setIsLoading(false);
+      const nextSubscription = normalizeSubscription(data);
+      if (requestId.current === currentRequestId) {
+        setSubscription(nextSubscription);
+      }
+
+      return nextSubscription;
+    } catch (error) {
+      console.error("Error loading subscription:", error);
+      if (requestId.current === currentRequestId) {
+        setSubscription(INACTIVE_SUBSCRIPTION);
+      }
+      return null;
+    } finally {
+      if (requestId.current === currentRequestId) {
+        setIsLoading(false);
+      }
     }
+  }, [userId]);
 
-    loadSubscription();
-
+  useEffect(() => {
+    void refresh();
     return () => {
-      mounted = false;
+      requestId.current += 1;
     };
-  }, [user]);
+  }, [refresh]);
 
+  const expiryTime = subscription.expiresAt
+    ? new Date(subscription.expiresAt).getTime()
+    : null;
   const hasValidExpiry =
-    !subscription.expiresAt ||
-    new Date(subscription.expiresAt).getTime() > Date.now();
-
+    expiryTime === null ||
+    (Number.isFinite(expiryTime) && expiryTime > Date.now());
   const isSubscribed =
     subscription.status === "active" &&
     subscription.plan === "pro" &&
@@ -85,6 +90,7 @@ function useSubscription() {
     subscription,
     isSubscribed,
     isLoading,
+    refresh,
   };
 }
 

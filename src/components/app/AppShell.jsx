@@ -7,7 +7,7 @@ import {
 } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import MeridianMark from "../ui/MeridianMark";
+import RecordiumMark from "../ui/RecordiumMark";
 import { useAuth } from "../../hooks/useAuth";
 import PageTransition from "../motion/PageTransition";
 
@@ -66,14 +66,14 @@ function AppShell({ children }) {
     <>
       <div className="min-h-screen bg-[var(--bg)] lg:grid lg:grid-cols-[240px_1fr]">
       <aside className="fixed inset-y-0 hidden w-60 border-r border-[var(--border-soft)] bg-[var(--bg)] p-5 lg:block">
-        <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><MeridianMark /> Meridian</Link>
+        <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><RecordiumMark /> Recordium</Link>
         <Navigation onRequestSignOut={() => setShowSignOutConfirm(true)} />
         <p className="absolute bottom-6 left-5 right-5 text-xs leading-5 text-[var(--text-muted)]">Your private record of progress.</p>
       </aside>
 
       <div className="min-w-0 lg:col-start-2">
         <header className={`sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-[var(--border-soft)] px-5 backdrop-blur ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:hidden`}>
-          <Link to="/" className="flex items-center gap-2.5 font-semibold"><MeridianMark /> Meridian</Link>
+          <Link to="/" className="flex items-center gap-2.5 font-semibold"><RecordiumMark /> Recordium</Link>
           <button onClick={() => setMenuOpen((open) => !open)} className="grid size-10 place-items-center rounded-full border border-[var(--border)]" aria-label="Toggle application navigation" aria-expanded={menuOpen}>
             {menuOpen ? <X size={18} /> : <Menu size={19} />}
           </button>
@@ -115,7 +115,7 @@ function AppShell({ children }) {
             <div className="mt-2">
               <h2 className="text-2xl font-semibold tracking-[-0.04em] text-white">Sign out?</h2>
               <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-                You will be signed out of this device. Your trading records will remain safely stored in your Meridian account.
+                You will be signed out of this device. Your trading records will remain safely stored in your Recordium account.
               </p>
             </div>
 

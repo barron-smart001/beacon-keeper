@@ -20,7 +20,7 @@ function AnimatedText({
         ease: [0.22, 1, 0.36, 1],
       }}
       className={`inline-block ${
-        shimmer ? "meridian-shimmer" : ""
+        shimmer ? "recordium-shimmer" : ""
       } ${className}`}
     >
       {children}

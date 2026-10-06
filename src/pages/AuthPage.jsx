@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
-import MeridianMark from "../components/ui/MeridianMark";
+import RecordiumMark from "../components/ui/RecordiumMark";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 
@@ -44,7 +44,7 @@ function AuthPage({ mode }) {
   const alternatePath = isSignUp ? "/sign-in" : "/sign-up";
   const alternateCopy = isSignUp
     ? "Already have an account?"
-    : "New to Meridian?";
+    : "New to Recordium?";
   const alternateAction = isSignUp ? "Sign in" : "Create an account";
 
   async function handleSubmit(event) {
@@ -165,7 +165,7 @@ function AuthPage({ mode }) {
           to="/"
           className="relative z-10 flex items-center gap-2.5 self-start font-semibold tracking-[-0.03em]"
         >
-          <MeridianMark /> Meridian
+          <RecordiumMark /> Recordium
         </Link>
 
         <div className="pointer-events-none absolute -bottom-48 -left-48 size-[560px] rounded-full bg-[radial-gradient(circle,rgba(201,168,118,0.13),transparent_65%)]" />
@@ -180,7 +180,7 @@ function AuthPage({ mode }) {
           </h1>
 
           <p className="mt-6 max-w-md text-base leading-7 text-[var(--text-secondary)]">
-            From the plan before a trade to the lesson after it, Meridian gives
+            From the plan before a trade to the lesson after it, Recordium gives
             your decisions a home.
           </p>
 
@@ -219,13 +219,13 @@ function AuthPage({ mode }) {
             to="/"
             className="mb-12 inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] lg:hidden"
           >
-            <ArrowLeft size={16} /> Back to Meridian
+            <ArrowLeft size={16} /> Back to Recordium
           </Link>
 
           <div className="lg:hidden">
-            <MeridianMark />
+            <RecordiumMark />
             <p className="mt-8 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-              Meridian
+              Recordium
             </p>
           </div>
 
@@ -235,7 +235,7 @@ function AuthPage({ mode }) {
 
           <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
             {isForgotPassword
-              ? "Enter the email connected to your Meridian account and we’ll send you a secure password reset link."
+              ? "Enter the email connected to your Recordium account and we’ll send you a secure password reset link."
               : isSignUp
                 ? "Start with the records and routines that matter to you."
                 : "Sign in to continue your trading practice."}
@@ -401,7 +401,7 @@ function AuthPage({ mode }) {
           )}
 
           <p className="mt-10 text-center text-xs leading-5 text-[var(--text-muted)]">
-            Your account is secured by Meridian.
+            Your account is secured by Recordium.
           </p>
         </div>
       </section>

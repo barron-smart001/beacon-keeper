@@ -56,7 +56,7 @@ function TermsGuard() {
   if (authLoading || isChecking) {
     return (
       <main className="grid min-h-screen place-items-center bg-[var(--bg)] px-5 text-center text-sm text-[var(--text-secondary)]">
-        Preparing your Meridian workspace…
+        Preparing your Recordium workspace…
       </main>
     );
   }
@@ -70,7 +70,7 @@ function TermsGuard() {
         state={{
           from: location,
           message:
-            "Verify your email address before accessing Meridian.",
+            "Verify your email address before accessing Recordium.",
         }}
       />
     );

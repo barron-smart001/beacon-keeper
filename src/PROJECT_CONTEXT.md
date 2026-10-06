@@ -1,8 +1,8 @@
-# MERIDIAN — PROJECT CONTEXT
+# RECORDIUM — PROJECT CONTEXT
 
 ## Product
 
-Meridian is a premium trader financial record-keeping and accountability platform.
+Recordium is a premium trader financial record-keeping and accountability platform.
 
 It is NOT intended to be a Bloomberg/TradingView replacement and should NOT become an institutional trading terminal.
 
@@ -139,7 +139,7 @@ The application should track:
 - Rule adherence percentage
 - Most frequently violated rules
 
-This is one of Meridian's core differentiating features.
+This is one of Recordium's core differentiating features.
 
 ---
 
@@ -278,7 +278,7 @@ If an optional free AI integration becomes useful later, it can be considered se
 
 # Landing Page
 
-Meridian MUST have a premium public landing page.
+Recordium MUST have a premium public landing page.
 
 The landing page is part of V1.
 
@@ -298,7 +298,7 @@ Suggested sections:
 12. Final CTA
 13. Footer
 
-The landing page should sell Meridian as a premium trader accountability and financial record-keeping platform.
+The landing page should sell Recordium as a premium trader accountability and financial record-keeping platform.
 
 Suggested positioning:
 
@@ -311,7 +311,7 @@ Potential CTA:
 
 # Visual Identity
 
-Use the existing Meridian UI as the visual foundation.
+Use the existing Recordium UI as the visual foundation.
 
 DO NOT replace the visual identity with a generic SaaS design.
 
@@ -377,7 +377,7 @@ Avoid:
 
 # Existing UI Reference
 
-The original Meridian UI was a dark fintech/trading dashboard.
+The original Recordium UI was a dark fintech/trading dashboard.
 
 We are adapting its visual language rather than copying its old functionality.
 
@@ -392,7 +392,7 @@ Keep:
 - Command-palette concept
 - Premium spacing
 
-But redesign the information architecture around the new Meridian product.
+But redesign the information architecture around the new Recordium product.
 
 ---
 
@@ -498,7 +498,7 @@ Do not rewrite working code unnecessarily.
 
 # Product Principle
 
-Meridian should make traders want to open the app every day.
+Recordium should make traders want to open the app every day.
 
 The core loop is:
 
