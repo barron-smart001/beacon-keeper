@@ -13,6 +13,11 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "../components/app/AppShell";
+import {
+  RevealItem,
+  ScrollReveal,
+  StaggerGroup,
+} from "../components/motion/ScrollReveal";
 import UpgradeModal from "../components/subscription/UpgradeModal";
 import { useAuth } from "../hooks/useAuth";
 import useSubscription from "../hooks/useSubscription";
@@ -280,14 +285,18 @@ function GoalsPage() {
           </p>
         )}
 
-        <section className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup
+          as="section"
+          className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {goalTypes.map((type) => {
             const count = activeGoals.filter(
               (goal) => goal.type === type
             ).length;
 
             return (
-              <article
+              <RevealItem
+                as="article"
                 key={type}
                 className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5"
               >
@@ -307,12 +316,15 @@ function GoalsPage() {
                       }.`
                     : `No active ${type} goals.`}
                 </p>
-              </article>
+              </RevealItem>
             );
           })}
-        </section>
+        </StaggerGroup>
 
-        <section className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+        <ScrollReveal
+          as="section"
+          className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
+        >
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-medium">
@@ -332,9 +344,10 @@ function GoalsPage() {
           </div>
 
           {goals.length ? (
-            <div className="mt-6 space-y-3">
+            <StaggerGroup className="mt-6 space-y-3">
               {goals.map((goal) => (
-                <div
+                <RevealItem
+                  as="div"
                   key={goal.id}
                   className="flex items-start gap-4 rounded-xl border border-[var(--border-soft)] bg-[var(--bg)] px-4 py-4"
                 >
@@ -405,16 +418,16 @@ function GoalsPage() {
                       <Trash2 size={14} />
                     </button>
                   </div>
-                </div>
+                </RevealItem>
               ))}
-            </div>
+            </StaggerGroup>
           ) : (
             <div className="mt-6 rounded-xl border border-[var(--border-soft)] bg-[var(--bg)] p-5 text-sm text-[var(--text-secondary)]">
               No goals yet. Create one to start tracking your next
               milestone.
             </div>
           )}
-        </section>
+        </ScrollReveal>
       </main>
 
       {createPortal(

@@ -15,6 +15,11 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "../../components/app/AppShell";
+import {
+  RevealItem,
+  ScrollReveal,
+  StaggerGroup,
+} from "../../components/motion/ScrollReveal";
 import UpgradeModal from "../../components/subscription/UpgradeModal";
 import useSubscription from "../../hooks/useSubscription";
 import { supabase } from "../../lib/supabase";
@@ -435,7 +440,7 @@ const MoneyPage = () => {
         <div className="mx-auto max-w-7xl">
           {/* Page header */}
 
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <ScrollReveal as="div" className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm text-[var(--text-muted)]">
                 Financial record
@@ -459,7 +464,7 @@ const MoneyPage = () => {
               <Plus size={17} />
               Add transaction
             </button>
-          </div>
+          </ScrollReveal>
 
           {/* Error */}
 
@@ -486,33 +491,45 @@ const MoneyPage = () => {
 
           {/* Financial overview */}
 
-          <section className="mt-8 grid gap-4 md:grid-cols-3">
-            <MetricCard
-              icon={Wallet}
-              label="Net balance"
-              value={formatAmount(balance)}
-              variant="balance"
-              secondary="Current"
-            />
+          <StaggerGroup
+            as="section"
+            className="mt-8 grid gap-4 md:grid-cols-3"
+          >
+            <RevealItem>
+              <MetricCard
+                icon={Wallet}
+                label="Net balance"
+                value={formatAmount(balance)}
+                variant="balance"
+                secondary="Current"
+              />
+            </RevealItem>
 
-            <MetricCard
-              icon={ArrowUpRight}
-              label="Money in"
-              value={formatAmount(totals.income)}
-              variant="income"
-            />
+            <RevealItem>
+              <MetricCard
+                icon={ArrowUpRight}
+                label="Money in"
+                value={formatAmount(totals.income)}
+                variant="income"
+              />
+            </RevealItem>
 
-            <MetricCard
-              icon={ArrowDownLeft}
-              label="Money out"
-              value={formatAmount(totals.expenses)}
-              variant="expense"
-            />
-          </section>
+            <RevealItem>
+              <MetricCard
+                icon={ArrowDownLeft}
+                label="Money out"
+                value={formatAmount(totals.expenses)}
+                variant="expense"
+              />
+            </RevealItem>
+          </StaggerGroup>
 
           {/* Transactions */}
 
-          <section className="mt-8 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+          <ScrollReveal
+            as="section"
+            className="mt-8 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
+          >
             <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-4">
               <div>
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">
@@ -560,7 +577,7 @@ const MoneyPage = () => {
                 ))}
               </div>
             )}
-          </section>
+          </ScrollReveal>
         </div>
       </main>
 

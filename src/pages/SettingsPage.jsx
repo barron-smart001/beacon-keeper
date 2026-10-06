@@ -20,6 +20,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
 import AppShell from "../components/app/AppShell";
+import { ScrollReveal } from "../components/motion/ScrollReveal";
 import UpgradeModal from "../components/subscription/UpgradeModal";
 
 import { useAuth } from "../hooks/useAuth";
@@ -284,7 +285,7 @@ function SettingsPage() {
     <AppShell>
       <main className="mx-auto max-w-5xl px-5 py-8 sm:px-8 lg:py-10">
         {/* Header */}
-        <div>
+        <ScrollReveal as="div">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Workspace control
           </p>
@@ -297,7 +298,7 @@ function SettingsPage() {
             Manage your Meridian account, trading preferences,
             accounts, and application experience.
           </p>
-        </div>
+        </ScrollReveal>
 
         {/* Notice */}
         {notice && (
@@ -321,7 +322,7 @@ function SettingsPage() {
         )}
 
         {/* ACCOUNT */}
-        <section className="mt-9">
+        <ScrollReveal as="section" className="mt-9">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Account
@@ -360,10 +361,10 @@ function SettingsPage() {
               </div>
             </div>
           </article>
-        </section>
+        </ScrollReveal>
 
         {/* TRADING */}
-        <section className="mt-8">
+        <ScrollReveal as="section" className="mt-8">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Trading
@@ -451,10 +452,10 @@ function SettingsPage() {
               </div>
             </form>
           </article>
-        </section>
+        </ScrollReveal>
 
         {/* TRADING ACCOUNTS */}
-        <section className="mt-8">
+        <ScrollReveal as="section" className="mt-8">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Trading accounts
@@ -538,10 +539,10 @@ function SettingsPage() {
               </button>
             </form>
           </article>
-        </section>
+        </ScrollReveal>
 
         {/* APPLICATION */}
-        <section className="mt-8">
+        <ScrollReveal as="section" className="mt-8">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Application
@@ -596,10 +597,10 @@ function SettingsPage() {
             </div>
 
           </article>
-        </section>
+        </ScrollReveal>
 
         {/* SECURITY */}
-        <section className="mt-8">
+        <ScrollReveal as="section" className="mt-8">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Security
@@ -634,10 +635,10 @@ function SettingsPage() {
               />
             </button>
           </article>
-        </section>
+        </ScrollReveal>
 
         {/* ACCOUNT ACTIONS */}
-        <section className="mt-8">
+        <ScrollReveal as="section" className="mt-8">
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Account actions
@@ -702,7 +703,7 @@ function SettingsPage() {
               />
             </button>
           </article>
-        </section>
+        </ScrollReveal>
       </main>
 
       {/* CONFIRMATION MODAL */}

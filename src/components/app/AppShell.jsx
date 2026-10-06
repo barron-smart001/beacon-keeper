@@ -1,5 +1,10 @@
 import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, Goal, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
+import {
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+} from "framer-motion";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import MeridianMark from "../ui/MeridianMark";
@@ -34,8 +39,18 @@ function Navigation({ closeMenu, onRequestSignOut }) {
 function AppShell({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { scrollY } = useScroll();
+  const reducedMotion = useReducedMotion();
   const { signOut } = useAuth();
   const navigate = useNavigate();
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const nextIsScrolled = latest > 8;
+    setIsScrolled((current) =>
+      current === nextIsScrolled ? current : nextIsScrolled
+    );
+  });
 
   async function handleConfirmSignOut() {
     try {
@@ -57,7 +72,7 @@ function AppShell({ children }) {
       </aside>
 
       <div className="min-w-0 lg:col-start-2">
-        <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-[var(--border-soft)] bg-[var(--bg)]/95 px-5 backdrop-blur lg:hidden">
+        <header className={`sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-[var(--border-soft)] px-5 backdrop-blur ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:hidden`}>
           <Link to="/" className="flex items-center gap-2.5 font-semibold"><MeridianMark /> Meridian</Link>
           <button onClick={() => setMenuOpen((open) => !open)} className="grid size-10 place-items-center rounded-full border border-[var(--border)]" aria-label="Toggle application navigation" aria-expanded={menuOpen}>
             {menuOpen ? <X size={18} /> : <Menu size={19} />}
@@ -70,7 +85,7 @@ function AppShell({ children }) {
           </div>
         )}
 
-        <header className="sticky top-0 z-20 hidden h-[76px] items-center justify-end border-b border-[var(--border-soft)] bg-[var(--bg)]/95 px-8 backdrop-blur lg:flex">
+        <header className={`sticky top-0 z-20 hidden h-[76px] items-center justify-end border-b border-[var(--border-soft)] px-8 backdrop-blur ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:flex`}>
           <button className="grid size-10 place-items-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]" aria-label="Notifications">
             <Bell size={18} />
           </button>

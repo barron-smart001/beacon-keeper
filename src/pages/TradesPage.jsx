@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppShell from "../components/app/AppShell";
+import { ScrollReveal } from "../components/motion/ScrollReveal";
 import UpgradeModal from "../components/subscription/UpgradeModal";
 import { useAuth } from "../hooks/useAuth";
 import useSubscription from "../hooks/useSubscription";
@@ -564,7 +565,7 @@ function TradesPage() {
   return (
     <AppShell>
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:py-10">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <ScrollReveal as="div" className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
               Trading journal
@@ -587,9 +588,9 @@ function TradesPage() {
             <CirclePlus size={17} />
             Record a trade
           </button>
-        </div>
+        </ScrollReveal>
 
-        <section className="mt-9 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+        <ScrollReveal as="section" className="mt-9 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
           <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-4 sm:px-6">
             <div>
               <h2 className="text-base font-medium">
@@ -740,7 +741,7 @@ function TradesPage() {
               </table>
             </div>
           )}
-        </section>
+        </ScrollReveal>
       </main>
 
       {formOpen && (
@@ -859,4 +860,3 @@ function TradesPage() {
 }
 
 export default TradesPage;
-

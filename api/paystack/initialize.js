@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 
 const SUPABASE_URL =
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 
 const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
@@ -15,34 +15,34 @@ const PAYSTACK_CALLBACK_URL =
   process.env.VITE_APP_URL ||
   process.env.APP_URL;
 
+const PLANS = {
+  monthly: {
+    id: "monthly",
+    name: "Monthly",
+    amount: 500000,
+    durationMonths: 1,
+  },
+
+  quarterly: {
+    id: "quarterly",
+    name: "3 Months",
+    amount: 1200000,
+    durationMonths: 3,
+  },
+
+  yearly: {
+    id: "yearly",
+    name: "1 Year",
+    amount: 3600000,
+    durationMonths: 12,
+  },
+};
+
 function getServerError(message) {
   return {
     success: false,
     message,
   };
-}
-
-function getSafeErrorDetails(error, request) {
-  let details =
-    error instanceof Error ? error.message : String(error ?? "Unknown error");
-
-  const sensitiveValues = [
-    ...Object.values(process.env),
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
-    PAYSTACK_SECRET_KEY,
-    request.headers.authorization,
-  ]
-    .filter((value) => typeof value === "string" && value.length > 0)
-    .sort((first, second) => second.length - first.length);
-
-  for (const value of new Set(sensitiveValues)) {
-    details = details.split(value).join("[REDACTED]");
-  }
-
-  return details
-    .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
-    .replace(/(authorization\s*[:=]\s*)[^\s,;]+/gi, "$1[REDACTED]");
 }
 
 export default async function handler(request, response) {
@@ -52,46 +52,55 @@ export default async function handler(request, response) {
       .json(getServerError("Method not allowed. Use POST."));
   }
 
-  // Check server configuration
-  if (!SUPABASE_URL) {
-    return response.status(500).json({
-      ...getServerError("Missing SUPABASE_URL"),
-      diagnostic: "Missing SUPABASE_URL",
-    });
-  }
-
-  if (!SUPABASE_ANON_KEY) {
-    return response.status(500).json({
-      ...getServerError("Missing SUPABASE_ANON_KEY"),
-      diagnostic: "Missing SUPABASE_ANON_KEY",
-    });
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return response.status(500).json(
+      getServerError(
+        "Missing Supabase server configuration."
+      )
+    );
   }
 
   if (!PAYSTACK_SECRET_KEY) {
-    return response.status(500).json({
-      ...getServerError("Missing PAYSTACK_SECRET_KEY"),
-      diagnostic: "Missing PAYSTACK_SECRET_KEY",
-    });
+    return response.status(500).json(
+      getServerError(
+        "Missing Paystack server configuration. Set PAYSTACK_SECRET_KEY on the server."
+      )
+    );
   }
 
-  // Get authenticated user's access token
   const authHeader = request.headers.authorization || "";
 
-  const token = authHeader.startsWith("Bearer ")
+  const bearerToken = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
     : "";
 
-  if (!token) {
+  if (!bearerToken) {
     return response.status(401).json(
       getServerError(
-        "A valid authenticated session is required to initialize checkout."
+        "A valid authenticated Meridian session is required."
       )
     );
   }
 
   try {
-    // Create Supabase server client
-    const supabase = createClient(
+    const body =
+      typeof request.body === "string"
+        ? JSON.parse(request.body || "{}")
+        : request.body || {};
+
+    const planId = body.plan;
+
+    const selectedPlan = PLANS[planId];
+
+    if (!selectedPlan) {
+      return response.status(400).json(
+        getServerError(
+          "Invalid Meridian subscription plan. Choose monthly, quarterly, or yearly."
+        )
+      );
+    }
+
+    const supabaseClient = createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
       {
@@ -102,23 +111,25 @@ export default async function handler(request, response) {
       }
     );
 
-    // Verify the user's Supabase session
     const {
       data: userData,
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } = await supabaseClient.auth.getUser(bearerToken);
 
     if (userError || !userData?.user) {
-      console.error("Supabase user verification failed.");
+      console.error("Supabase user verification failed:", userError);
 
       return response.status(401).json(
         getServerError(
-          "Unable to verify the current Meridian user session."
+          "Unable to verify the authenticated Meridian user."
         )
       );
     }
 
-    const { id: userId, email } = userData.user;
+    const user = userData.user;
+
+    const userId = user.id;
+    const email = user.email;
 
     if (!userId || !email) {
       return response.status(400).json(
@@ -128,25 +139,24 @@ export default async function handler(request, response) {
       );
     }
 
-    // Meridian Pro price: ₦18,000
-    // Paystack expects NGN amounts in kobo.
-    const amountInKobo = 1800000;
-
-    const reference = `meridian_pro_${userId}_${Date.now()}_${randomUUID().replace(
+    const reference = `meridian_${selectedPlan.id}_${userId}_${Date.now()}_${randomUUID().replace(
       /-/g,
       ""
     )}`;
 
     const paystackRequestBody = {
       email,
-      amount: amountInKobo,
+      amount: selectedPlan.amount,
       currency: "NGN",
       reference,
 
       metadata: {
         user_id: userId,
-        product: "meridian_pro",
         email,
+        product: "meridian_pro",
+        plan: selectedPlan.id,
+        plan_name: selectedPlan.name,
+        duration_months: selectedPlan.durationMonths,
       },
     };
 
@@ -201,16 +211,25 @@ export default async function handler(request, response) {
 
         reference:
           paystackPayload.data.reference || reference,
+
+        plan: selectedPlan.id,
+
+        amount: selectedPlan.amount,
+
+        duration_months:
+          selectedPlan.durationMonths,
       },
     });
   } catch (error) {
-    console.error("Paystack initialization request failed.");
+    console.error(
+      "Paystack initialization error:",
+      error
+    );
 
     return response.status(500).json({
       success: false,
-      message: "Paystack initialization request failed",
-      diagnostic: "Paystack initialization request failed",
-      details: getSafeErrorDetails(error, request),
+      message:
+        "Unable to initialize Paystack payment right now.",
     });
   }
 }

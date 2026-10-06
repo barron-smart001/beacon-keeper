@@ -14,6 +14,11 @@ import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 
 import AppShell from "../components/app/AppShell";
+import {
+  RevealItem,
+  ScrollReveal,
+  StaggerGroup,
+} from "../components/motion/ScrollReveal";
 import UpgradeModal from "../components/subscription/UpgradeModal";
 
 import { useAuth } from "../hooks/useAuth";
@@ -360,9 +365,15 @@ function RulesPage() {
 
         {/* EMPTY STATE */}
         {!rules.length ? (
-          <section className="mt-9 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+          <StaggerGroup
+            as="section"
+            className="mt-9 grid gap-5 xl:grid-cols-[0.9fr_1.1fr]"
+          >
             {/* Intro card */}
-            <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+            <RevealItem
+              as="article"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
+            >
               <ShieldCheck
                 className="text-[var(--accent)]"
                 size={22}
@@ -386,10 +397,13 @@ function RulesPage() {
                 Create a rule
                 <Plus size={15} />
               </button>
-            </article>
+            </RevealItem>
 
             {/* Starter checklist */}
-            <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+            <RevealItem
+              as="article"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
+            >
               <div className="flex items-center justify-between border-b border-[var(--border-soft)] pb-5">
                 <div>
                   <h2 className="text-base font-medium">
@@ -424,11 +438,11 @@ function RulesPage() {
                   </div>
                 ))}
               </div>
-            </article>
-          </section>
+            </RevealItem>
+          </StaggerGroup>
         ) : (
           /* SAVED RULES - FULL WIDTH */
-          <section className="mt-9">
+          <ScrollReveal as="section" className="mt-9">
             <article className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 lg:p-7">
               {/* Rules header */}
               <div className="flex flex-col gap-5 border-b border-[var(--border-soft)] pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -525,7 +539,7 @@ function RulesPage() {
                 </p>
               </div>
             </article>
-          </section>
+          </ScrollReveal>
         )}
       </main>
 
