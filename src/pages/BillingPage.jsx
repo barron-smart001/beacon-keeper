@@ -8,10 +8,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import AppShell from "../components/app/AppShell";
 import { useAuth } from "../hooks/useAuth";
 import useSubscription from "../hooks/useSubscription";
+import { BILLING_PLAN_ORDER, BILLING_PLANS } from "../lib/billingPlans";
 import { supabase } from "../lib/supabase";
 
 const faqs = [
@@ -297,9 +299,7 @@ function BillingFAQ() {
 function BillingPage() {
   const { user } = useAuth();
   const { subscription, isSubscribed, isLoading, refresh } = useSubscription();
-  const [isInitializingCheckout, setIsInitializingCheckout] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
-  const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [paymentHistoryVersion, setPaymentHistoryVersion] = useState(0);
   const [notice, setNotice] = useState("");
 
@@ -382,61 +382,19 @@ function BillingPage() {
     }
   }, [refresh]);
 
-  async function handleUpgrade(planId) {
-    if (isInitializingCheckout || isVerifyingPayment) return;
+  const navigate = useNavigate();
 
-    setIsInitializingCheckout(true);
-    setCheckoutPlan(planId);
-    setNotice("");
+  function handleUpgrade(planId) {
+    if (isVerifyingPayment) return;
 
-    try {
-      if (!user) {
-        throw new Error("Please sign in before starting checkout.");
-      }
-
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      const accessToken = session?.access_token;
-
-      if (!accessToken) {
-        throw new Error("Your Recordium session is no longer active. Please sign in again.");
-      }
-
-      const response = await fetch("/api/paystack/initialize", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ plan: planId }),
-      });
-
-      const payload = await response.json();
-
-      if (!response.ok || !payload?.success || !payload?.data?.authorization_url) {
-        throw new Error(
-          payload?.message || "We couldn't start checkout. Please try again."
-        );
-      }
-
-      window.location.href = payload.data.authorization_url;
-    } catch (error) {
-      setNotice(
-        error instanceof Error
-          ? error.message
-          : "We couldn't start checkout. Please try again."
-      );
-    } finally {
-      setIsInitializingCheckout(false);
-      setCheckoutPlan(null);
+    const validPlan = BILLING_PLANS[planId];
+    if (!validPlan) {
+      setNotice("Please choose a valid subscription plan.");
+      return;
     }
+
+    setNotice("");
+    navigate(`/app/billing/confirm?plan=${validPlan.id}`);
   }
 
   useEffect(() => {
@@ -567,45 +525,26 @@ function BillingPage() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-3">
-            {[
-              {
-                id: "monthly",
-                title: "Monthly",
-                price: "₦5,000",
-                label: "₦5,000 / month",
-              },
-              {
-                id: "quarterly",
-                title: "3 Months",
-                price: "₦12,000",
-                label: "₦12,000 / 3 months",
-              },
-              {
-                id: "yearly",
-                title: "1 Year",
-                price: "₦36,000",
-                label: "₦36,000 / year",
-              },
-            ].map((plan, index) => (
-              <PricingCard
-                key={plan.id}
-                title={plan.title}
-                price={plan.price}
-                label={plan.label}
-                features={proFeatures}
-                ctaText={
-                  isInitializingCheckout && checkoutPlan === plan.id
-                    ? "Starting checkout..."
-                    : isSubscribed
-                      ? "Extend Recordium Pro"
-                      : "Choose Recordium Pro"
-                }
-                onClick={() => handleUpgrade(plan.id)}
-                disabled={isInitializingCheckout || isVerifyingPayment}
-                featured={plan.id === "yearly"}
-                delay={0.1 + index * 0.08}
-              />
-            ))}
+            {BILLING_PLAN_ORDER.map((planId, index) => {
+              const plan = BILLING_PLANS[planId];
+
+              return (
+                <PricingCard
+                  key={plan.id}
+                  title={plan.title}
+                  price={plan.displayPrice}
+                  label={`${plan.displayPrice} / ${plan.durationLabel}`}
+                  features={proFeatures}
+                  ctaText={
+                    isSubscribed ? "Extend Recordium Pro" : "Choose Recordium Pro"
+                  }
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={isVerifyingPayment}
+                  featured={plan.id === "yearly"}
+                  delay={0.1 + index * 0.08}
+                />
+              );
+            })}
           </div>
         </section>
 

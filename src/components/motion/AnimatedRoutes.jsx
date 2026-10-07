@@ -12,6 +12,7 @@ import GoalsPage from "../../pages/GoalsPage";
 import ResetPasswordPage from "../../pages/ResetPasswordPage";
 import CalendarPage from "../../pages/CalendarPage";
 import BillingPage from "../../pages/BillingPage";
+import BillingConfirmationPage from "../../pages/BillingConfirmationPage";
 import SettingsPage from "../../pages/SettingsPage";
 import TermsPage from "../../pages/TermsPage";
 
@@ -112,6 +113,8 @@ function AnimatedRoutes() {
             <Route path="/app/calendar" element={<CalendarPage />} />
 
             <Route path="/app/billing" element={<BillingPage />} />
+
+            <Route path="/app/billing/confirm" element={<BillingConfirmationPage />} />
 
             <Route path="/app/settings" element={<SettingsPage />} />
           </Route>

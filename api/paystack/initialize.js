@@ -157,6 +157,7 @@ export default async function handler(request, response) {
       success: true,
       data: {
         authorization_url: payload.data.authorization_url,
+        access_code: payload.data.access_code || null,
         reference: payload.data.reference || reference,
         plan: plan.id,
         amount: plan.amount,
