@@ -5,10 +5,9 @@ import {
   ChevronDown,
   CreditCard,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import AppShell from "../components/app/AppShell";
 import { useAuth } from "../hooks/useAuth";
@@ -56,7 +55,6 @@ function PricingCard({
   ctaText,
   onClick,
   disabled = false,
-  featured = false,
   delay = 0,
 }) {
   return (
@@ -65,31 +63,8 @@ function PricingCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut", delay }}
       whileHover={!disabled ? { y: -6, scale: 1.01 } : undefined}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-[26px] border p-5 shadow-[0_18px_40px_rgba(0,0,0,0.08)] transition-all duration-300 sm:p-6 ${
-        featured
-          ? "border-[var(--accent)]/60 bg-[var(--surface)] shadow-[0_24px_64px_rgba(0,0,0,0.12)]"
-          : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border)]/80"
-      }`}
+      className="group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-[var(--accent)]/60 bg-[var(--surface)] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.12)] transition-all duration-300 sm:p-6"
     >
-      {featured && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut", delay: delay + 0.1 }}
-          whileHover={{ y: -1, scale: 1.01 }}
-          className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-[var(--accent)]/35 bg-[var(--surface-elevated)]/90 px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)] shadow-[0_0_0_1px_rgba(230,176,74,0.12)] sm:right-4 sm:top-4 sm:gap-2 sm:px-3 sm:text-[10px]"
-        >
-          <motion.span
-            whileHover={{ rotate: 8, scale: 1.08 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="flex items-center justify-center"
-          >
-            <Sparkles size={11} className="shrink-0" />
-          </motion.span>
-          <span className="leading-none">Recommended</span>
-        </motion.div>
-      )}
-
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-base font-medium text-[var(--text-primary)]">{title}</p>
@@ -122,9 +97,7 @@ function PricingCard({
           className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
             disabled
               ? "cursor-not-allowed border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--text-muted)]"
-              : featured
-                ? "bg-[var(--accent)] text-[#17130d] hover:bg-[var(--accent-light)]"
-                : "border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] hover:bg-[var(--surface-elevated)]"
+              : "bg-[var(--accent)] text-[#17130d] hover:bg-[var(--accent-light)]"
           }`}
         >
           {ctaText}
@@ -297,34 +270,21 @@ function BillingFAQ() {
 }
 
 function BillingPage() {
-  const { user } = useAuth();
+  const { user, session, isLoading: isAuthLoading } = useAuth();
   const { subscription, isSubscribed, isLoading, refresh } = useSubscription();
+  const [searchParams] = useSearchParams();
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [paymentHistoryVersion, setPaymentHistoryVersion] = useState(0);
   const [notice, setNotice] = useState("");
+  const reference = searchParams.get("reference");
 
-  const verifyPaystackReference = useCallback(async (reference) => {
-    if (!reference) return;
+  const verifyPaystackReference = useCallback(async (reference, accessToken) => {
+    if (!reference || !accessToken) return;
 
     setIsVerifyingPayment(true);
     setNotice("");
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      const accessToken = session?.access_token;
-
-      if (!accessToken) {
-        throw new Error("Your Recordium session is no longer active. Please sign in again.");
-      }
-
       const response = await fetch("/api/paystack/verify", {
         method: "POST",
         headers: {
@@ -334,11 +294,44 @@ function BillingPage() {
         body: JSON.stringify({ reference }),
       });
 
-      const payload = await response.json();
+      const responseBody = await response.text();
+      if (import.meta.env.DEV) {
+        console.info("Paystack verification response:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+        });
+      }
+      let payload = null;
+
+      try {
+        payload = responseBody ? JSON.parse(responseBody) : null;
+      } catch {
+        if (import.meta.env.DEV) {
+          console.error("Paystack verification returned invalid JSON:", {
+            status: response.status,
+            statusText: response.statusText,
+            body: responseBody,
+          });
+        }
+        throw new Error(
+          import.meta.env.DEV
+            ? `Payment verification returned an invalid response (HTTP ${response.status}): ${responseBody || "Empty response body"}`
+            : `Payment verification returned an invalid response (HTTP ${response.status}).`
+        );
+      }
 
       if (!response.ok || !payload?.success) {
+        if (import.meta.env.DEV) {
+          console.error("Paystack verification failed:", {
+            status: response.status,
+            statusText: response.statusText,
+            body: responseBody,
+          });
+        }
         throw new Error(
-          payload?.message || "The payment could not be verified."
+          payload?.message ||
+            `The payment could not be verified (HTTP ${response.status}).`
         );
       }
 
@@ -372,6 +365,9 @@ function BillingPage() {
       setNotice("Payment successful. Welcome to Recordium Pro.");
       setPaymentHistoryVersion((version) => version + 1);
     } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("Paystack callback verification error:", error);
+      }
       setNotice(
         error instanceof Error
           ? error.message
@@ -398,12 +394,24 @@ function BillingPage() {
   }
 
   useEffect(() => {
-    const reference = new URLSearchParams(window.location.search).get("reference");
+    if (isAuthLoading || !reference) return;
 
-    if (reference) {
-      verifyPaystackReference(reference);
+    if (!user || !session?.access_token) {
+      setNotice("Your Recordium session is no longer active. Please sign in again.");
+      return;
     }
-  }, [verifyPaystackReference]);
+
+    if (import.meta.env.DEV) {
+      console.log("Paystack callback reference:", reference);
+    }
+    verifyPaystackReference(reference, session.access_token);
+  }, [
+    isAuthLoading,
+    reference,
+    session?.access_token,
+    user,
+    verifyPaystackReference,
+  ]);
 
   const planName = isSubscribed ? "Recordium Pro" : "No active plan";
   const statusText = isSubscribed ? "Active" : "Not subscribed";
@@ -540,7 +548,6 @@ function BillingPage() {
                   }
                   onClick={() => handleUpgrade(plan.id)}
                   disabled={isVerifyingPayment}
-                  featured={plan.id === "yearly"}
                   delay={0.1 + index * 0.08}
                 />
               );

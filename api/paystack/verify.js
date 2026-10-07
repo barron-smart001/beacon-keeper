@@ -102,13 +102,34 @@ export default async function handler(request, response) {
         },
       }
     );
-    const payload = await paystackResponse.json();
+    const paystackResponseBody = await paystackResponse.text();
+    let payload = null;
 
-    if (!paystackResponse.ok || !payload?.status || !payload?.data) {
-      console.error("Paystack transaction verification failed:", payload);
+    try {
+      payload = paystackResponseBody
+        ? JSON.parse(paystackResponseBody)
+        : null;
+    } catch {
+      console.error("Paystack verification returned invalid JSON:", {
+        status: paystackResponse.status,
+        statusText: paystackResponse.statusText,
+      });
       return errorResponse(
         response,
-        400,
+        502,
+        "Paystack returned an invalid verification response."
+      );
+    }
+
+    if (!paystackResponse.ok || !payload?.status || !payload?.data) {
+      console.error("Paystack transaction verification failed:", {
+        status: paystackResponse.status,
+        statusText: paystackResponse.statusText,
+        message: payload?.message,
+      });
+      return errorResponse(
+        response,
+        paystackResponse.ok ? 400 : 502,
         payload?.message || "Paystack could not verify this payment."
       );
     }
