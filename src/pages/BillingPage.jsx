@@ -362,7 +362,7 @@ function BillingPage() {
       url.searchParams.delete("reference");
       window.history.replaceState({}, "", url.toString());
 
-      setNotice("Payment successful. Welcome to Recordium Pro.");
+      setNotice("Payment successful. Your Pro subscription is now active.");
       setPaymentHistoryVersion((version) => version + 1);
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -413,13 +413,17 @@ function BillingPage() {
     verifyPaystackReference,
   ]);
 
-  const planName = isSubscribed ? "Recordium Pro" : "No active plan";
-  const statusText = isSubscribed ? "Active" : "Not subscribed";
+  const planName = isSubscribed ? "Pro" : "No active plan";
+  const statusText = isLoading
+    ? "Checking..."
+    : isSubscribed
+      ? "Active"
+      : "Not subscribed";
   const billingText = isLoading
     ? "Checking subscription..."
     : isSubscribed
       ? subscription.expiresAt
-        ? `Expires ${new Date(subscription.expiresAt).toLocaleDateString("en-NG", {
+        ? `Active until ${new Date(subscription.expiresAt).toLocaleDateString(undefined, {
             day: "2-digit",
             month: "short",
             year: "numeric",
@@ -513,10 +517,17 @@ function BillingPage() {
                 <div className="mt-2 flex items-center gap-3">
                   <p className="text-xl font-medium text-[var(--text-primary)]">{planName}</p>
                   <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    <span className={`h-2 w-2 rounded-full ${isLoading ? "animate-pulse bg-[var(--text-muted)]" : isSubscribed ? "bg-emerald-400" : "bg-[var(--text-muted)]"}`} />
                     {statusText}
                   </span>
                 </div>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  {isLoading
+                    ? "Loading current plan..."
+                    : isSubscribed
+                      ? subscription.billingPlan?.name || "Plan details unavailable"
+                      : "Choose a plan to activate Pro"}
+                </p>
               </div>
 
               <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text-secondary)]">

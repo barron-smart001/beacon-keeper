@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import RecordiumMark from "../ui/RecordiumMark";
 import { useAuth } from "../../hooks/useAuth";
+import useSubscription from "../../hooks/useSubscription";
 import PageTransition from "../motion/PageTransition";
 
 const navigation = [
@@ -34,6 +35,65 @@ function Navigation({ closeMenu, onRequestSignOut }) {
   <Settings size={18} />
   Settings
 </Link><button type="button" onClick={onRequestSignOut} className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"><LogOut size={18} />Sign out</button></nav>;
+}
+
+function SubscriptionIndicator({ compact = false }) {
+  const { subscription, isSubscribed, isLoading } = useSubscription();
+  const expiryDate = subscription.expiresAt
+    ? new Date(subscription.expiresAt)
+    : null;
+  const formattedExpiry =
+    expiryDate && Number.isFinite(expiryDate.getTime())
+      ? expiryDate.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : null;
+  const label = isLoading
+    ? "Checking subscription"
+    : isSubscribed
+      ? "PRO ACTIVE"
+      : "Upgrade to Pro";
+  const detail = isLoading
+    ? "Loading plan..."
+    : isSubscribed
+      ? [
+          subscription.billingPlan?.title || "Pro",
+          formattedExpiry ? `Active until ${formattedExpiry}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "Unlock all features";
+
+  return (
+    <Link
+      to="/app/billing"
+      aria-label={`${label}. ${detail}`}
+      className={`inline-flex min-w-0 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] text-left transition-colors hover:border-[var(--accent)]/50 hover:bg-[var(--surface-elevated)] ${
+        compact ? "max-w-[120px] px-2 py-1.5" : "max-w-[280px] px-3 py-2"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`size-2 shrink-0 rounded-full ${
+          isLoading
+            ? "animate-pulse bg-[var(--text-muted)]"
+            : isSubscribed
+              ? "bg-emerald-400"
+              : "bg-[var(--text-muted)]"
+        }`}
+      />
+      <span className="min-w-0">
+        <span className="block truncate text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">
+          {label}
+        </span>
+        <span className="block truncate text-[10px] text-[var(--text-muted)]">
+          {detail}
+        </span>
+      </span>
+    </Link>
+  );
 }
 
 function AppShell({ children }) {
@@ -72,8 +132,9 @@ function AppShell({ children }) {
       </aside>
 
       <div className="min-w-0 lg:col-start-2">
-        <header className={`sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-[var(--border-soft)] px-5 backdrop-blur ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:hidden`}>
+        <header className={`sticky top-0 z-20 flex h-[68px] items-center justify-between gap-2 border-b border-[var(--border-soft)] px-3 backdrop-blur sm:px-5 ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:hidden`}>
           <Link to="/" className="flex items-center gap-2.5 font-semibold"><RecordiumMark /> Recordium</Link>
+          <SubscriptionIndicator compact />
           <button onClick={() => setMenuOpen((open) => !open)} className="grid size-10 place-items-center rounded-full border border-[var(--border)]" aria-label="Toggle application navigation" aria-expanded={menuOpen}>
             {menuOpen ? <X size={18} /> : <Menu size={19} />}
           </button>
@@ -85,7 +146,8 @@ function AppShell({ children }) {
           </div>
         )}
 
-        <header className={`sticky top-0 z-20 hidden h-[76px] items-center justify-end border-b border-[var(--border-soft)] px-8 backdrop-blur ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:flex`}>
+        <header className={`sticky top-0 z-20 hidden h-[76px] items-center justify-end gap-4 border-b border-[var(--border-soft)] px-8 backdrop-blur ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:flex`}>
+          <SubscriptionIndicator />
           <button className="grid size-10 place-items-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]" aria-label="Notifications">
             <Bell size={18} />
           </button>
