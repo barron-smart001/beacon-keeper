@@ -126,7 +126,7 @@ create table if not exists public.money_transactions (
   updated_at timestamptz not null default now()
 );
 
-create or replace function public.has_active_recordium_pro(p_user_id uuid)
+create or replace function public.has_active_meridian_pro(p_user_id uuid)
 returns boolean
 language sql
 stable
@@ -190,9 +190,9 @@ begin
 end;
 $$;
 
-revoke all on function public.has_active_recordium_pro(uuid)
+revoke all on function public.has_active_meridian_pro(uuid)
   from public, anon, authenticated;
-grant execute on function public.has_active_recordium_pro(uuid)
+grant execute on function public.has_active_meridian_pro(uuid)
   to authenticated;
 revoke all on function public.can_create_initial_record(uuid, text)
   from public, anon, authenticated;
@@ -288,7 +288,7 @@ for insert to authenticated
 with check (
   auth.uid() = user_id
   and (
-    public.has_active_recordium_pro(auth.uid())
+    public.has_active_meridian_pro(auth.uid())
     or public.can_create_initial_record(auth.uid(), 'accounts')
   )
 );
@@ -296,13 +296,13 @@ drop policy if exists "Require Pro for account updates" on public.accounts;
 create policy "Require Pro for account updates"
 on public.accounts as restrictive
 for update to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()))
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()))
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for account deletes" on public.accounts;
 create policy "Require Pro for account deletes"
 on public.accounts as restrictive
 for delete to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 
 drop policy if exists "Users can manage their accounts" on public.accounts;
 create policy "Users can manage their accounts"
@@ -317,7 +317,7 @@ for insert to authenticated
 with check (
   auth.uid() = user_id
   and (
-    public.has_active_recordium_pro(auth.uid())
+    public.has_active_meridian_pro(auth.uid())
     or public.can_create_initial_record(auth.uid(), 'trading_rules')
   )
 );
@@ -325,13 +325,13 @@ drop policy if exists "Require Pro for trading rule updates" on public.trading_r
 create policy "Require Pro for trading rule updates"
 on public.trading_rules as restrictive
 for update to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()))
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()))
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for trading rule deletes" on public.trading_rules;
 create policy "Require Pro for trading rule deletes"
 on public.trading_rules as restrictive
 for delete to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 
 drop policy if exists "Users can manage their trading rules" on public.trading_rules;
 create policy "Users can manage their trading rules"
@@ -343,18 +343,18 @@ drop policy if exists "Require Pro for goal inserts" on public.goals;
 create policy "Require Pro for goal inserts"
 on public.goals as restrictive
 for insert to authenticated
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for goal updates" on public.goals;
 create policy "Require Pro for goal updates"
 on public.goals as restrictive
 for update to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()))
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()))
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for goal deletes" on public.goals;
 create policy "Require Pro for goal deletes"
 on public.goals as restrictive
 for delete to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 
 drop policy if exists "Users can manage their goals" on public.goals;
 create policy "Users can manage their goals"
@@ -366,18 +366,18 @@ drop policy if exists "Require Pro for trade inserts" on public.trades;
 create policy "Require Pro for trade inserts"
 on public.trades as restrictive
 for insert to authenticated
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for trade updates" on public.trades;
 create policy "Require Pro for trade updates"
 on public.trades as restrictive
 for update to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()))
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()))
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for trade deletes" on public.trades;
 create policy "Require Pro for trade deletes"
 on public.trades as restrictive
 for delete to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 
 drop policy if exists "Users can manage their trades" on public.trades;
 create policy "Users can manage their trades"
@@ -390,17 +390,17 @@ drop policy if exists "Require Pro for money transaction inserts"
 create policy "Require Pro for money transaction inserts"
 on public.money_transactions as restrictive
 for insert to authenticated
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for money transaction updates"
   on public.money_transactions;
 create policy "Require Pro for money transaction updates"
 on public.money_transactions as restrictive
 for update to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()))
-with check (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()))
+with check (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));
 drop policy if exists "Require Pro for money transaction deletes"
   on public.money_transactions;
 create policy "Require Pro for money transaction deletes"
 on public.money_transactions as restrictive
 for delete to authenticated
-using (auth.uid() = user_id and public.has_active_recordium_pro(auth.uid()));
+using (auth.uid() = user_id and public.has_active_meridian_pro(auth.uid()));

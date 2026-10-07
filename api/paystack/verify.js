@@ -54,7 +54,7 @@ export default async function handler(request, response) {
     return errorResponse(
       response,
       401,
-      "A valid authenticated Recordium session is required."
+      "A valid authenticated Meridian session is required."
     );
   }
 
@@ -87,7 +87,7 @@ export default async function handler(request, response) {
       return errorResponse(
         response,
         401,
-        "Unable to verify the authenticated Recordium user."
+        "Unable to verify the authenticated Meridian user."
       );
     }
 
@@ -164,7 +164,7 @@ export default async function handler(request, response) {
       return errorResponse(
         response,
         400,
-        "Paystack metadata does not identify a valid Recordium plan."
+        "Paystack metadata does not identify a valid Meridian plan."
       );
     }
 
@@ -212,7 +212,7 @@ export default async function handler(request, response) {
         error.code === "23505" ? 409 : 500,
         error.code === "23505"
           ? "This payment reference conflicts with another payment."
-          : "Paystack verified the payment, but Recordium could not activate the subscription."
+          : "Paystack verified the payment, but Meridian could not activate the subscription."
       );
     }
 
@@ -220,7 +220,7 @@ export default async function handler(request, response) {
       success: true,
       message: result.duplicate
         ? "This payment was already processed."
-        : "Payment verified and Recordium Pro activated.",
+        : "Payment verified and Meridian Pro activated.",
       data: {
         reference,
         plan: plan.id,

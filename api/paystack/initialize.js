@@ -47,7 +47,7 @@ export default async function handler(request, response) {
     return errorResponse(
       response,
       401,
-      "A valid authenticated Recordium session is required."
+      "A valid authenticated Meridian session is required."
     );
   }
 
@@ -95,7 +95,7 @@ export default async function handler(request, response) {
       return errorResponse(
         response,
         401,
-        "Unable to verify the authenticated Recordium user."
+        "Unable to verify the authenticated Meridian user."
       );
     }
 
@@ -108,7 +108,7 @@ export default async function handler(request, response) {
       );
     }
 
-    const reference = `recordium_${plan.id}_${userId}_${Date.now()}_${randomUUID().replaceAll("-", "")}`;
+    const reference = `meridian_${plan.id}_${userId}_${Date.now()}_${randomUUID().replaceAll("-", "")}`;
     const paystackBody = {
       email,
       amount: plan.amount,

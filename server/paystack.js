@@ -45,7 +45,7 @@ export async function recordSuccessfulPayment(
   { userId, reference, amount, currency, paidAt, plan }
 ) {
   const { data, error } = await adminClient.rpc(
-    "activate_recordium_subscription",
+    "activate_meridian_subscription",
     {
       p_user_id: userId,
       p_reference: reference,

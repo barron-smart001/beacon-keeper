@@ -158,7 +158,7 @@ export default async function handler(request, response) {
     return errorResponse(
       response,
       400,
-      "Paystack payment details do not match a valid Recordium plan."
+      "Paystack payment details do not match a valid Meridian plan."
     );
   }
 
@@ -194,7 +194,7 @@ export default async function handler(request, response) {
       success: true,
       message: result.duplicate
         ? "Duplicate Paystack event acknowledged; payment was already processed."
-        : "Recordium Pro activated from verified Paystack payment.",
+        : "Meridian Pro activated from verified Paystack payment.",
     });
   } catch (error) {
     console.error("Paystack webhook payment processing failed:", error);
