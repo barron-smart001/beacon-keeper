@@ -555,7 +555,7 @@ function BillingPage() {
                   label={`${plan.displayPrice} / ${plan.durationLabel}`}
                   features={proFeatures}
                   ctaText={
-                    isSubscribed ? "Extend Recordium Pro" : "Choose Recordium Pro"
+                    isSubscribed ? "Extend your subscription" : "Choose your plan"
                   }
                   onClick={() => handleUpgrade(plan.id)}
                   disabled={isVerifyingPayment}
