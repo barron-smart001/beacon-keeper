@@ -210,6 +210,22 @@ begin
   end if;
 
   if is_duplicate then
+    if current_profile.subscription_status <> 'active'
+      or current_profile.subscription_plan <> 'pro'
+      or current_profile.subscription_started_at is null
+      or current_profile.subscription_expires_at is null then
+      start_at := p_paid_at;
+      expires_at := start_at + make_interval(months => duration_months);
+
+      update public.profiles
+         set subscription_status = 'active',
+             subscription_plan = 'pro',
+             subscription_started_at = start_at,
+             subscription_expires_at = expires_at
+       where id = p_user_id
+      returning * into current_profile;
+    end if;
+
     return jsonb_build_object(
       'duplicate', true,
       'payment_id', payment_id,
