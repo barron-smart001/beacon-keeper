@@ -47,7 +47,7 @@ export default async function handler(request, response) {
     return errorResponse(
       response,
       401,
-      "A valid authenticated Meridian session is required."
+      "A valid authenticated TradeFrame session is required."
     );
   }
 
@@ -95,7 +95,7 @@ export default async function handler(request, response) {
       return errorResponse(
         response,
         401,
-        "Unable to verify the authenticated Meridian user."
+        "Unable to verify the authenticated TradeFrame user."
       );
     }
 

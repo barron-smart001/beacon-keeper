@@ -125,7 +125,7 @@ function ResetPasswordPage() {
           className="relative z-10 flex items-center gap-2.5 self-start font-semibold tracking-[-0.03em]"
         >
           <RecordiumMark />
-          Meridian
+          TradeFrame
         </Link>
 
         <div className="pointer-events-none absolute -bottom-48 -left-48 size-[560px] rounded-full bg-[radial-gradient(circle,rgba(201,168,118,0.13),transparent_65%)]" />
@@ -141,7 +141,7 @@ function ResetPasswordPage() {
 
           <p className="mt-6 max-w-md text-base leading-7 text-[var(--text-secondary)]">
             Set a new password and get back to recording your trading
-            decisions with Meridian.
+            decisions with TradeFrame.
           </p>
 
           <div className="mt-10 rounded-2xl border border-[var(--border)] bg-[#0d0e12] p-5">
@@ -189,7 +189,7 @@ function ResetPasswordPage() {
             <RecordiumMark />
 
             <p className="mt-8 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-              Meridian
+              TradeFrame
             </p>
           </div>
 
@@ -220,7 +220,7 @@ function ResetPasswordPage() {
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-                Choose a new password for your Meridian account.
+                Choose a new password for your TradeFrame account.
               </p>
 
               <form
@@ -338,7 +338,7 @@ function ResetPasswordPage() {
           )}
 
           <p className="mt-10 text-center text-xs leading-5 text-[var(--text-muted)]">
-            Your account is secured by Meridian.
+            Your account is secured by TradeFrame.
           </p>
         </div>
       </section>

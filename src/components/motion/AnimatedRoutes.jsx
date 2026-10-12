@@ -98,7 +98,7 @@ function AnimatedRoutes() {
             }
           />
 
-          {/* Meridian application requires accepted Terms */}
+          {/* TradeFrame application requires accepted Terms */}
           <Route element={<TermsGuard />}>
             <Route path="/app" element={<DashboardPage />} />
 

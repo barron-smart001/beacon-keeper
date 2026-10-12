@@ -64,8 +64,8 @@ export async function fetchPaystackTransaction(secretKey, reference) {
   return payload.data;
 }
 
-// Checks a Paystack transaction against a Meridian plan. Returns the payment
-// details to record, or null when it is not a payable Meridian charge.
+// Checks a Paystack transaction against a TradeFrame plan. Returns the payment
+// details to record, or null when it is not a payable TradeFrame charge.
 export function getVerifiedPayment(transaction, userId) {
   const metadata = transaction?.metadata;
   const plan = getPlanFromMetadata(metadata);
@@ -107,7 +107,7 @@ async function paystackGet(secretKey, path) {
   return { response, payload };
 }
 
-// Finds the user's successful Meridian payments on Paystack and records any
+// Finds the user's successful TradeFrame payments on Paystack and records any
 // that never reached the database (e.g. the callback or webhook failed).
 // Recording is idempotent, so already-processed payments are skipped.
 export async function syncUserPayments(adminClient, secretKey, { userId, email }) {

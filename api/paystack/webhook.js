@@ -219,14 +219,14 @@ export default async function handler(request, response) {
     !Number.isSafeInteger(amount) ||
     amount !== plan.amount
   ) {
-    // Not a Meridian subscription charge (or not payable); acknowledge so
+    // Not a TradeFrame subscription charge (or not payable); acknowledge so
     // Paystack stops retrying an event that will never succeed.
-    console.warn("Ignoring Paystack charge that is not a valid Meridian plan:", {
+    console.warn("Ignoring Paystack charge that is not a valid TradeFrame plan:", {
       reference,
     });
     return acknowledge(
       response,
-      "Charge is not a valid Meridian subscription payment; ignored."
+      "Charge is not a valid TradeFrame subscription payment; ignored."
     );
   }
 
@@ -264,7 +264,7 @@ export default async function handler(request, response) {
       response,
       result.duplicate
         ? "Duplicate Paystack event acknowledged; payment was already processed."
-        : "Meridian Pro activated from verified Paystack payment."
+        : "TradeFrame Pro activated from verified Paystack payment."
     );
   } catch (error) {
     console.error("Paystack webhook payment processing failed:", error);

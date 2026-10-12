@@ -18,14 +18,14 @@ import { supabase } from "../lib/supabase";
 
 const faqs = [
   {
-    question: "What is Meridian Pro?",
+    question: "What is TradeFrame Pro?",
     answer:
-      "Meridian Pro unlocks the full analytics, financial tracking, and advanced trading insights in Meridian.",
+      "TradeFrame Pro unlocks the full analytics, financial tracking, and advanced trading insights in TradeFrame.",
   },
   {
     question: "What happens when I subscribe?",
     answer:
-      "Your Meridian Pro access is activated after the payment flow is successfully completed and confirmed.",
+      "Your TradeFrame Pro access is activated after the payment flow is successfully completed and confirmed.",
   },
   {
     question: "Can I cancel my subscription?",
@@ -35,7 +35,7 @@ const faqs = [
   {
     question: "Will my trading data remain intact?",
     answer:
-      "Yes. Your records remain tied to your Meridian account regardless of subscription status.",
+      "Yes. Your records remain tied to your TradeFrame account regardless of subscription status.",
   },
 ];
 
@@ -367,7 +367,7 @@ function BillingPage() {
         !hasValidExpiry
       ) {
         throw new Error(
-          "Payment was verified, but the profile does not yet show active Meridian Pro access. Please retry verification."
+          "Payment was verified, but the profile does not yet show active TradeFrame Pro access. Please retry verification."
         );
       }
 
@@ -375,8 +375,8 @@ function BillingPage() {
         replace: true,
         state: {
           paymentNotice: isSync
-            ? "We found your payment. Meridian Pro is now active."
-            : "Payment successful. Meridian Pro is now active.",
+            ? "We found your payment. TradeFrame Pro is now active."
+            : "Payment successful. TradeFrame Pro is now active.",
         },
       });
     } catch (error) {
@@ -414,7 +414,7 @@ function BillingPage() {
     if (isAuthLoading || !reference) return;
 
     if (!user || !accessToken) {
-      setNotice("Your Meridian session is no longer active. Please sign in again.");
+      setNotice("Your TradeFrame session is no longer active. Please sign in again.");
       return;
     }
 
@@ -515,7 +515,7 @@ function BillingPage() {
               transition={{ duration: 0.5, ease: "easeOut", delay: 0.18 }}
               className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base"
             >
-              Meridian Pro gives you the tools to trade with more clarity, focus, and control.
+              TradeFrame Pro gives you the tools to trade with more clarity, focus, and control.
             </motion.p>
           </div>
         </motion.section>
