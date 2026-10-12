@@ -1,11 +1,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { LockKeyhole, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import { rememberReturnTo } from "../../lib/postPaymentRedirect";
 
 function UpgradeModal({ isOpen, onClose }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const handleSubscribe = () => {
+    rememberReturnTo(pathname);
     onClose();
     navigate("/app/billing");
   };

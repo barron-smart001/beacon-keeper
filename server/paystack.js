@@ -64,6 +64,91 @@ export async function fetchPaystackTransaction(secretKey, reference) {
   return payload.data;
 }
 
+// Checks a Paystack transaction against a Meridian plan. Returns the payment
+// details to record, or null when it is not a payable Meridian charge.
+export function getVerifiedPayment(transaction, userId) {
+  const metadata = transaction?.metadata;
+  const plan = getPlanFromMetadata(metadata);
+  const amount = Number(transaction?.amount);
+  const paidAt = new Date(transaction?.paid_at || transaction?.created_at || "");
+
+  if (
+    transaction?.status !== "success" ||
+    typeof transaction.reference !== "string" ||
+    !transaction.reference ||
+    metadata?.user_id !== userId ||
+    !plan ||
+    transaction.currency !== "NGN" ||
+    !Number.isSafeInteger(amount) ||
+    amount !== plan.amount ||
+    Number.isNaN(paidAt.getTime())
+  ) {
+    return null;
+  }
+
+  return {
+    userId,
+    reference: transaction.reference,
+    amount,
+    currency: transaction.currency,
+    paidAt: paidAt.toISOString(),
+    plan,
+  };
+}
+
+async function paystackGet(secretKey, path) {
+  const response = await fetch(`https://api.paystack.co${path}`, {
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      Accept: "application/json",
+    },
+  });
+  const payload = await response.json().catch(() => null);
+  return { response, payload };
+}
+
+// Finds the user's successful Meridian payments on Paystack and records any
+// that never reached the database (e.g. the callback or webhook failed).
+// Recording is idempotent, so already-processed payments are skipped.
+export async function syncUserPayments(adminClient, secretKey, { userId, email }) {
+  const customer = await paystackGet(
+    secretKey,
+    `/customer/${encodeURIComponent(email)}`
+  );
+  if (customer.response.status === 404 || !customer.payload?.data?.id) {
+    return { recorded: 0, subscription: null };
+  }
+
+  const transactions = await paystackGet(
+    secretKey,
+    `/transaction?customer=${customer.payload.data.id}&status=success&perPage=100`
+  );
+  if (!transactions.response.ok || !Array.isArray(transactions.payload?.data)) {
+    const error = new Error(
+      transactions.payload?.message || "Paystack could not list payments."
+    );
+    error.status = transactions.response.status;
+    throw error;
+  }
+
+  const payments = transactions.payload.data
+    .map((transaction) => getVerifiedPayment(transaction, userId))
+    .filter(Boolean)
+    .sort((a, b) => a.paidAt.localeCompare(b.paidAt));
+
+  let recorded = 0;
+  let subscription = null;
+  for (const payment of payments) {
+    const result = await recordSuccessfulPayment(adminClient, payment);
+    if (!result.duplicate) {
+      recorded += 1;
+    }
+    subscription = result;
+  }
+
+  return { recorded, subscription };
+}
+
 export async function recordSuccessfulPayment(
   adminClient,
   { userId, reference, amount, currency, paidAt, plan }

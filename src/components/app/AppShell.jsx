@@ -1,5 +1,5 @@
-import { Bell, CalendarDays, CircleDollarSign, ClipboardCheck, CreditCard, Goal, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, X } from "lucide-react";
-import { useState } from "react";
+import { Bell, CalendarDays, CheckCircle2, CircleDollarSign, ClipboardCheck, CreditCard, Goal, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   useMotionValueEvent,
   useReducedMotion,
@@ -104,6 +104,17 @@ function AppShell({ children }) {
   const reducedMotion = useReducedMotion();
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [paymentNotice, setPaymentNotice] = useState(
+    location.state?.paymentNotice || ""
+  );
+
+  // Clear the one-time notice from history so a reload doesn't repeat it.
+  useEffect(() => {
+    if (location.state?.paymentNotice) {
+      navigate(location.pathname + location.search, { replace: true, state: null });
+    }
+  }, [location.pathname, location.search, location.state, navigate]);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const nextIsScrolled = latest > 8;
@@ -155,6 +166,15 @@ function AppShell({ children }) {
         </header>
 
         <main className="min-w-0">
+          {paymentNotice && (
+            <div role="status" className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 sm:mx-6 lg:mx-8">
+              <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+              <p className="flex-1">{paymentNotice} You now have full access.</p>
+              <button type="button" onClick={() => setPaymentNotice("")} aria-label="Dismiss" className="shrink-0 text-emerald-200/80 hover:text-emerald-100">
+                <X size={16} />
+              </button>
+            </div>
+          )}
           <PageTransition>{children}</PageTransition>
         </main>
       </div>

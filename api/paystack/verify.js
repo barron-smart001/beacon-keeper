@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   getPlanFromMetadata,
   recordSuccessfulPayment,
+  syncUserPayments,
 } from "../../server/paystack.js";
 
 const SUPABASE_URL =
@@ -15,6 +16,20 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 function errorResponse(response, status, message) {
   return response.status(status).json({ success: false, message });
+}
+
+// Database errors carry no secrets and are needed to diagnose activation
+// failures, so surface them alongside the user-facing message.
+function activationErrorResponse(response, error, fallbackMessage) {
+  const isConflict = error?.code === "23505";
+  const detail = [error?.code, error?.message].filter(Boolean).join(": ");
+
+  return response.status(isConflict ? 409 : 500).json({
+    success: false,
+    message: isConflict
+      ? "This payment reference conflicts with another payment."
+      : `${fallbackMessage}${detail ? ` (${detail})` : ""}`,
+  });
 }
 
 function parseRequestBody(body) {
@@ -65,10 +80,11 @@ export default async function handler(request, response) {
     return errorResponse(response, 400, "The request body is not valid JSON.");
   }
 
+  const isSync = body.sync === true;
   const reference =
     typeof body.reference === "string" ? body.reference.trim() : "";
 
-  if (!reference || reference.length > 200) {
+  if (!isSync && (!reference || reference.length > 200)) {
     return errorResponse(
       response,
       400,
@@ -92,6 +108,53 @@ export default async function handler(request, response) {
     }
 
     const userId = userData.user.id;
+    const adminClient = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: { persistSession: false, autoRefreshToken: false },
+      }
+    );
+
+    if (isSync) {
+      if (!userData.user.email) {
+        return response.status(200).json({
+          success: true,
+          data: { recorded: 0, subscription: null },
+        });
+      }
+
+      let syncResult;
+      try {
+        syncResult = await syncUserPayments(adminClient, PAYSTACK_SECRET_KEY, {
+          userId,
+          email: userData.user.email,
+        });
+      } catch (error) {
+        console.error("Failed to sync Paystack payments:", error);
+        if (error.status) {
+          return errorResponse(
+            response,
+            502,
+            "Paystack could not list your payments right now."
+          );
+        }
+        return activationErrorResponse(
+          response,
+          error,
+          "Your payment was found, but Meridian could not activate the subscription."
+        );
+      }
+
+      return response.status(200).json({
+        success: true,
+        message: syncResult.recorded
+          ? "Missed payment found and Meridian Pro activated."
+          : "No unprocessed payments found.",
+        data: syncResult,
+      });
+    }
+
     const paystackResponse = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
       {
@@ -188,13 +251,6 @@ export default async function handler(request, response) {
       );
     }
 
-    const adminClient = createClient(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY,
-      {
-        auth: { persistSession: false, autoRefreshToken: false },
-      }
-    );
     let result;
     try {
       result = await recordSuccessfulPayment(adminClient, {
@@ -207,12 +263,10 @@ export default async function handler(request, response) {
       });
     } catch (error) {
       console.error("Failed to record verified payment:", error);
-      return errorResponse(
+      return activationErrorResponse(
         response,
-        error.code === "23505" ? 409 : 500,
-        error.code === "23505"
-          ? "This payment reference conflicts with another payment."
-          : "Paystack verified the payment, but Meridian could not activate the subscription."
+        error,
+        "Paystack verified the payment, but Meridian could not activate the subscription."
       );
     }
 

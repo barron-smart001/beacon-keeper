@@ -6,13 +6,14 @@ import {
   CreditCard,
   ShieldCheck,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import AppShell from "../components/app/AppShell";
 import { useAuth } from "../hooks/useAuth";
 import useSubscription from "../hooks/useSubscription";
 import { BILLING_PLAN_ORDER, BILLING_PLANS } from "../lib/billingPlans";
+import { takeReturnTo } from "../lib/postPaymentRedirect";
 import { supabase } from "../lib/supabase";
 
 const faqs = [
@@ -272,17 +273,24 @@ function BillingFAQ() {
 function BillingPage() {
   const { user, session, isLoading: isAuthLoading } = useAuth();
   const { subscription, isSubscribed, isLoading, refresh } = useSubscription();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [paymentHistoryVersion, setPaymentHistoryVersion] = useState(0);
   const [notice, setNotice] = useState("");
   const reference = searchParams.get("reference");
 
-  const verifyPaystackReference = useCallback(async (reference, accessToken) => {
-    if (!reference || !accessToken) return;
+  const navigate = useNavigate();
+  const attemptedConfirmation = useRef(null);
 
+  // Confirms a payment server-side, either by its Paystack reference (after
+  // the Paystack redirect) or by syncing the user's unrecorded payments.
+  // On activation, returns the user to the page that needed Pro.
+  const confirmPayment = useCallback(async (request, accessToken) => {
+    if (!accessToken) return;
+
+    const isSync = request.sync === true;
     setIsVerifyingPayment(true);
-    setNotice("");
+    if (!isSync) setNotice("");
 
     try {
       const response = await fetch("/api/paystack/verify", {
@@ -291,7 +299,7 @@ function BillingPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ reference }),
+        body: JSON.stringify(request),
       });
 
       const responseBody = await response.text();
@@ -335,6 +343,11 @@ function BillingPage() {
         );
       }
 
+      // Nothing was missed; the user simply hasn't paid yet.
+      if (isSync && !payload.data?.recorded) {
+        return;
+      }
+
       const currentSubscription = await refresh();
       if (!currentSubscription) {
         throw new Error(
@@ -358,33 +371,28 @@ function BillingPage() {
         );
       }
 
-      setSearchParams(
-        (params) => {
-          const nextParams = new URLSearchParams(params);
-          nextParams.delete("reference");
-          nextParams.delete("trxref");
-          return nextParams;
+      navigate(takeReturnTo(), {
+        replace: true,
+        state: {
+          paymentNotice: isSync
+            ? "We found your payment. Meridian Pro is now active."
+            : "Payment successful. Meridian Pro is now active.",
         },
-        { replace: true }
-      );
-
-      setNotice("Payment successful. Your Pro subscription is now active.");
-      setPaymentHistoryVersion((version) => version + 1);
+      });
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.error("Paystack callback verification error:", error);
+        console.error("Paystack payment confirmation error:", error);
       }
       setNotice(
         error instanceof Error
           ? error.message
           : "The payment could not be verified."
       );
+      setPaymentHistoryVersion((version) => version + 1);
     } finally {
       setIsVerifyingPayment(false);
     }
-  }, [refresh, setSearchParams]);
-
-  const navigate = useNavigate();
+  }, [navigate, refresh]);
 
   function handleUpgrade(planId) {
     if (isVerifyingPayment) return;
@@ -399,24 +407,48 @@ function BillingPage() {
     navigate(`/app/billing/confirm?plan=${validPlan.id}`);
   }
 
+  const accessToken = session?.access_token;
+
+  // Returning from Paystack: confirm this payment once.
   useEffect(() => {
     if (isAuthLoading || !reference) return;
 
-    if (!user || !session?.access_token) {
+    if (!user || !accessToken) {
       setNotice("Your Meridian session is no longer active. Please sign in again.");
       return;
     }
 
-    if (import.meta.env.DEV) {
-      console.log("Paystack callback reference:", reference);
+    if (attemptedConfirmation.current === reference) return;
+    attemptedConfirmation.current = reference;
+
+    void confirmPayment({ reference }, accessToken);
+  }, [accessToken, confirmPayment, isAuthLoading, reference, user]);
+
+  // Not subscribed: check once for paid-but-unrecorded payments, in case
+  // the earlier callback or webhook never activated the subscription.
+  useEffect(() => {
+    if (
+      isAuthLoading ||
+      isLoading ||
+      isSubscribed ||
+      reference ||
+      !user ||
+      !accessToken ||
+      attemptedConfirmation.current
+    ) {
+      return;
     }
-    verifyPaystackReference(reference, session.access_token);
+
+    attemptedConfirmation.current = "sync";
+    void confirmPayment({ sync: true }, accessToken);
   }, [
+    accessToken,
+    confirmPayment,
     isAuthLoading,
+    isLoading,
+    isSubscribed,
     reference,
-    session?.access_token,
     user,
-    verifyPaystackReference,
   ]);
 
   const planName = isSubscribed ? "Pro" : "No active plan";
