@@ -1,13 +1,18 @@
 import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import {
+  fetchPaystackTransaction,
   getPlanFromMetadata,
   recordSuccessfulPayment,
 } from "../../server/paystack.js";
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const config = {
   api: { bodyParser: false },
@@ -17,29 +22,56 @@ function errorResponse(response, status, message) {
   return response.status(status).json({ success: false, message });
 }
 
+function acknowledge(response, message) {
+  return response.status(200).json({ success: true, message });
+}
+
+function toText(value) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Buffer.isBuffer(value)) {
+    return value.toString("utf8");
+  }
+
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value).toString("utf8");
+  }
+
+  return null;
+}
+
+// Returns the request body and whether it is byte-for-byte what Paystack
+// signed. The stream is read before touching request.body, because some
+// runtimes parse the body lazily on first access and consume the stream.
 async function readRawBody(request) {
-  if (typeof request.body === "string") {
-    return request.body;
+  const rawBody = toText(request.rawBody);
+  if (rawBody !== null) {
+    return { text: rawBody, exact: true };
   }
 
-  if (Buffer.isBuffer(request.body)) {
-    return request.body.toString("utf8");
+  if (request.readable && !request.readableEnded) {
+    const chunks = [];
+    for await (const chunk of request) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+
+    if (chunks.length > 0) {
+      return { text: Buffer.concat(chunks).toString("utf8"), exact: true };
+    }
   }
 
-  if (request.body instanceof Uint8Array) {
-    return Buffer.from(request.body).toString("utf8");
+  const bodyText = toText(request.body);
+  if (bodyText !== null) {
+    return { text: bodyText, exact: true };
   }
 
   if (request.body && typeof request.body === "object") {
-    return JSON.stringify(request.body);
+    return { text: JSON.stringify(request.body), exact: false };
   }
 
-  const chunks = [];
-  for await (const chunk of request) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-
-  return Buffer.concat(chunks).toString("utf8");
+  return { text: "", exact: true };
 }
 
 function hasValidSignature(rawBody, signature) {
@@ -78,26 +110,35 @@ export default async function handler(request, response) {
     );
   }
 
-  let rawBody;
+  let body;
   try {
-    rawBody = await readRawBody(request);
+    body = await readRawBody(request);
   } catch (error) {
     console.error("Unable to read Paystack webhook request body:", error);
     return errorResponse(response, 400, "Unable to read webhook payload.");
   }
 
-  if (
-    !hasValidSignature(
-      rawBody,
-      request.headers["x-paystack-signature"]
-    )
-  ) {
-    return errorResponse(response, 401, "Invalid Paystack webhook signature.");
+  const signatureIsValid = hasValidSignature(
+    body.text,
+    request.headers["x-paystack-signature"]
+  );
+
+  // With the exact bytes available, an invalid signature is a forged request.
+  // If the runtime only exposed a re-serialized body, the signature cannot be
+  // checked reliably; the payment is still confirmed with Paystack below.
+  if (!signatureIsValid) {
+    if (body.exact) {
+      return errorResponse(response, 401, "Invalid Paystack webhook signature.");
+    }
+
+    console.warn(
+      "Paystack webhook raw body unavailable; relying on Paystack API verification."
+    );
   }
 
   let event;
   try {
-    event = JSON.parse(rawBody);
+    event = JSON.parse(body.text);
   } catch {
     return errorResponse(response, 400, "Malformed Paystack webhook payload.");
   }
@@ -114,51 +155,78 @@ export default async function handler(request, response) {
     event.event === "charge.failed" ||
     event.event === "invoice.payment_failed"
   ) {
-    return response.status(200).json({
-      success: true,
-      message: "Failed payment acknowledged; existing access is unchanged.",
-    });
+    return acknowledge(
+      response,
+      "Failed payment acknowledged; existing access is unchanged."
+    );
   }
 
   if (
     event.event === "subscription.disable" ||
     event.event === "subscription.cancelled"
   ) {
-    return response.status(200).json({
-      success: true,
-      message: "Cancellation acknowledged; paid access remains until expiry.",
-    });
+    return acknowledge(
+      response,
+      "Cancellation acknowledged; paid access remains until expiry."
+    );
   }
 
   if (event.event !== "charge.success") {
-    return response.status(200).json({
-      success: true,
-      message: "Webhook event acknowledged without changes.",
-    });
+    return acknowledge(response, "Webhook event acknowledged without changes.");
   }
 
-  const transaction = event.data;
-  const metadata = transaction.metadata;
   const reference =
-    typeof transaction.reference === "string"
-      ? transaction.reference.trim()
+    typeof event.data.reference === "string"
+      ? event.data.reference.trim()
       : "";
+
+  if (!reference || reference.length > 200) {
+    return acknowledge(
+      response,
+      "Charge without a usable reference ignored."
+    );
+  }
+
+  // Trust Paystack's API, not the webhook payload, for the payment details.
+  let transaction;
+  try {
+    transaction = await fetchPaystackTransaction(
+      PAYSTACK_SECRET_KEY,
+      reference
+    );
+  } catch (error) {
+    console.error("Paystack webhook transaction lookup failed:", error);
+    // Non-2xx makes Paystack retry the webhook later.
+    return errorResponse(
+      response,
+      502,
+      "Unable to confirm the payment with Paystack."
+    );
+  }
+
+  const metadata = transaction.metadata;
   const plan = getPlanFromMetadata(metadata);
   const amount = Number(transaction.amount);
+  const userId = metadata?.user_id;
 
   if (
+    transaction.reference !== reference ||
     transaction.status !== "success" ||
-    !reference ||
-    !metadata?.user_id ||
     !plan ||
+    typeof userId !== "string" ||
+    !UUID_PATTERN.test(userId) ||
     transaction.currency !== "NGN" ||
     !Number.isSafeInteger(amount) ||
     amount !== plan.amount
   ) {
-    return errorResponse(
+    // Not a Meridian subscription charge (or not payable); acknowledge so
+    // Paystack stops retrying an event that will never succeed.
+    console.warn("Ignoring Paystack charge that is not a valid Meridian plan:", {
+      reference,
+    });
+    return acknowledge(
       response,
-      400,
-      "Paystack payment details do not match a valid Meridian plan."
+      "Charge is not a valid Meridian subscription payment; ignored."
     );
   }
 
@@ -166,10 +234,12 @@ export default async function handler(request, response) {
     transaction.paid_at || transaction.created_at || ""
   );
   if (Number.isNaN(paidAt.getTime())) {
-    return errorResponse(
+    console.warn("Ignoring Paystack charge without a valid timestamp:", {
+      reference,
+    });
+    return acknowledge(
       response,
-      400,
-      "Paystack did not provide a valid payment timestamp."
+      "Charge without a valid payment timestamp ignored."
     );
   }
 
@@ -182,7 +252,7 @@ export default async function handler(request, response) {
       }
     );
     const result = await recordSuccessfulPayment(adminClient, {
-      userId: metadata.user_id,
+      userId,
       reference,
       amount,
       currency: transaction.currency,
@@ -190,20 +260,27 @@ export default async function handler(request, response) {
       plan,
     });
 
-    return response.status(200).json({
-      success: true,
-      message: result.duplicate
+    return acknowledge(
+      response,
+      result.duplicate
         ? "Duplicate Paystack event acknowledged; payment was already processed."
-        : "Meridian Pro activated from verified Paystack payment.",
-    });
+        : "Meridian Pro activated from verified Paystack payment."
+    );
   } catch (error) {
     console.error("Paystack webhook payment processing failed:", error);
+
+    // A conflicting reference will never succeed on retry.
+    if (error.code === "23505") {
+      return acknowledge(
+        response,
+        "Payment reference conflicts with another payment; ignored."
+      );
+    }
+
     return errorResponse(
       response,
-      error.code === "23505" ? 409 : 500,
-      error.code === "23505"
-        ? "This payment reference conflicts with another payment."
-        : "Unable to process the verified Paystack payment."
+      500,
+      "Unable to process the verified Paystack payment."
     );
   }
 }

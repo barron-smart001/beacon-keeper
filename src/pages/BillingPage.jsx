@@ -17,14 +17,14 @@ import { supabase } from "../lib/supabase";
 
 const faqs = [
   {
-    question: "What is Recordium Pro?",
+    question: "What is Meridian Pro?",
     answer:
-      "Recordium Pro unlocks the full analytics, financial tracking, and advanced trading insights in Recordium.",
+      "Meridian Pro unlocks the full analytics, financial tracking, and advanced trading insights in Meridian.",
   },
   {
     question: "What happens when I subscribe?",
     answer:
-      "Your Recordium Pro access is activated after the payment flow is successfully completed and confirmed.",
+      "Your Meridian Pro access is activated after the payment flow is successfully completed and confirmed.",
   },
   {
     question: "Can I cancel my subscription?",
@@ -34,7 +34,7 @@ const faqs = [
   {
     question: "Will my trading data remain intact?",
     answer:
-      "Yes. Your records remain tied to your Recordium account regardless of subscription status.",
+      "Yes. Your records remain tied to your Meridian account regardless of subscription status.",
   },
 ];
 
@@ -272,7 +272,7 @@ function BillingFAQ() {
 function BillingPage() {
   const { user, session, isLoading: isAuthLoading } = useAuth();
   const { subscription, isSubscribed, isLoading, refresh } = useSubscription();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [paymentHistoryVersion, setPaymentHistoryVersion] = useState(0);
   const [notice, setNotice] = useState("");
@@ -354,13 +354,19 @@ function BillingPage() {
         !hasValidExpiry
       ) {
         throw new Error(
-          "Payment was verified, but the profile does not yet show active Recordium Pro access. Please retry verification."
+          "Payment was verified, but the profile does not yet show active Meridian Pro access. Please retry verification."
         );
       }
 
-      const url = new URL(window.location.href);
-      url.searchParams.delete("reference");
-      window.history.replaceState({}, "", url.toString());
+      setSearchParams(
+        (params) => {
+          const nextParams = new URLSearchParams(params);
+          nextParams.delete("reference");
+          nextParams.delete("trxref");
+          return nextParams;
+        },
+        { replace: true }
+      );
 
       setNotice("Payment successful. Your Pro subscription is now active.");
       setPaymentHistoryVersion((version) => version + 1);
@@ -376,7 +382,7 @@ function BillingPage() {
     } finally {
       setIsVerifyingPayment(false);
     }
-  }, [refresh]);
+  }, [refresh, setSearchParams]);
 
   const navigate = useNavigate();
 
@@ -397,7 +403,7 @@ function BillingPage() {
     if (isAuthLoading || !reference) return;
 
     if (!user || !session?.access_token) {
-      setNotice("Your Recordium session is no longer active. Please sign in again.");
+      setNotice("Your Meridian session is no longer active. Please sign in again.");
       return;
     }
 
@@ -477,7 +483,7 @@ function BillingPage() {
               transition={{ duration: 0.5, ease: "easeOut", delay: 0.18 }}
               className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base"
             >
-              Recordium Pro gives you the tools to trade with more clarity, focus, and control.
+              Meridian Pro gives you the tools to trade with more clarity, focus, and control.
             </motion.p>
           </div>
         </motion.section>

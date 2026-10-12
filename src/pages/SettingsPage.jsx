@@ -262,7 +262,7 @@ function SettingsPage() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-            Manage your Recordium account, trading preferences,
+            Manage your Meridian account, trading preferences,
             accounts, and application experience.
           </p>
         </ScrollReveal>
@@ -309,7 +309,7 @@ function SettingsPage() {
                   </h2>
 
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                    Your Recordium account identity.
+                    Your Meridian account identity.
                   </p>
                 </div>
               </div>
@@ -350,7 +350,7 @@ function SettingsPage() {
                 </h2>
 
                 <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-                  Set the defaults Recordium should use when
+                  Set the defaults Meridian should use when
                   organizing your trading records.
                 </p>
               </div>
@@ -530,7 +530,7 @@ function SettingsPage() {
                   </h2>
 
                   <p className="mt-1 text-xs text-[var(--text-muted)]">
-                    Recordium currently uses its dark interface.
+                    Meridian currently uses its dark interface.
                   </p>
                 </div>
               </div>
@@ -630,7 +630,7 @@ function SettingsPage() {
                   </h2>
 
                   <p className="mt-1 text-xs text-[var(--text-muted)]">
-                    Sign out of Recordium on this device.
+                    Sign out of Meridian on this device.
                   </p>
                 </div>
               </div>
@@ -658,7 +658,7 @@ function SettingsPage() {
                   </h2>
 
                   <p className="mt-1 max-w-xl text-xs leading-5 text-[var(--text-muted)]">
-                    Permanently remove your Recordium data from
+                    Permanently remove your Meridian data from
                     this application.
                   </p>
                 </div>
@@ -703,7 +703,7 @@ function SettingsPage() {
 
                   <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
                     You will be signed out of this device. Your trading
-                    records will remain safely stored in your Recordium account.
+                    records will remain safely stored in your Meridian account.
                   </p>
                 </div>
 
@@ -743,7 +743,7 @@ function SettingsPage() {
                     </h2>
 
                     <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                      Recordium will send password reset
+                      Meridian will send password reset
                       instructions to:
                     </p>
 
@@ -801,7 +801,7 @@ function SettingsPage() {
                     </h2>
 
                     <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                      This will permanently remove your Recordium
+                      This will permanently remove your Meridian
                       trading records, accounts, rules, goals, and
                       other application data.
                     </p>

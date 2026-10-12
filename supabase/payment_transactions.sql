@@ -210,13 +210,18 @@ begin
   end if;
 
   if is_duplicate then
-    if current_profile.subscription_status <> 'active'
-      or current_profile.subscription_plan <> 'pro'
-      or current_profile.subscription_started_at is null
-      or current_profile.subscription_expires_at is null then
-      start_at := p_paid_at;
-      expires_at := start_at + make_interval(months => duration_months);
+    start_at := p_paid_at;
+    expires_at := start_at + make_interval(months => duration_months);
 
+    -- Only repair a profile the original activation missed, and never
+    -- re-activate access from a payment whose period has already ended.
+    if expires_at > now()
+      and (
+        current_profile.subscription_status is distinct from 'active'
+        or current_profile.subscription_plan is distinct from 'pro'
+        or current_profile.subscription_started_at is null
+        or current_profile.subscription_expires_at is null
+      ) then
       update public.profiles
          set subscription_status = 'active',
              subscription_plan = 'pro',

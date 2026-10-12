@@ -11,6 +11,8 @@ import { SubscriptionContext } from "./subscriptionContext";
 import { supabase } from "../lib/supabase";
 import { BILLING_PLANS } from "../lib/billingPlans";
 
+const MAX_TIMEOUT_MS = 2_147_483_647;
+
 const INACTIVE_SUBSCRIPTION = {
   status: "inactive",
   plan: null,
@@ -138,9 +140,11 @@ export function SubscriptionProvider({ children }) {
       return undefined;
     }
 
+    // Browsers fire timers longer than ~24.8 days immediately, so wait in
+    // capped steps and re-check until the subscription actually expires.
     const timeoutId = window.setTimeout(
       () => setNow(Date.now()),
-      expiryTime - now
+      Math.min(expiryTime - now, MAX_TIMEOUT_MS)
     );
     return () => window.clearTimeout(timeoutId);
   }, [now, subscription.expiresAt]);

@@ -1,6 +1,5 @@
 import {
   ArrowRight,
-  Check,
   ChevronLeft,
   FileText,
   ShieldCheck,
@@ -65,7 +64,7 @@ function TermsPage() {
       replace: true,
       state: {
         message:
-          "You must accept Recordium's Terms & Conditions to access the application.",
+          "You must accept Meridian's Terms & Conditions to access the application.",
       },
     });
   }
@@ -86,7 +85,7 @@ function TermsPage() {
 
           <div className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]">
             <RecordiumMark />
-            Recordium
+            Meridian
           </div>
         </header>
 
@@ -105,7 +104,7 @@ function TermsPage() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[var(--text-secondary)]">
-            Please review the terms that govern your use of Recordium. You
+            Please review the terms that govern your use of Meridian. You
             must accept them before accessing your trading workspace.
           </p>
 
@@ -124,7 +123,7 @@ function TermsPage() {
 
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Recordium Terms of Use
+                  Meridian Terms of Use
                 </p>
 
                 <p className="mt-0.5 text-xs text-[var(--text-muted)]">
@@ -142,19 +141,19 @@ function TermsPage() {
                 </h2>
 
                 <p className="mt-3">
-                  By creating an account or accessing Recordium, you agree to
+                  By creating an account or accessing Meridian, you agree to
                   these Terms & Conditions. If you do not agree to these terms,
-                  you may not use the Recordium application.
+                  you may not use the Meridian application.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-base font-semibold text-[var(--text-primary)]">
-                  2. About Recordium
+                  2. About Meridian
                 </h2>
 
                 <p className="mt-3">
-                  Recordium is a trading record-keeping and journaling
+                  Meridian is a trading record-keeping and journaling
                   application designed to help users document trades, track
                   financial activity, manage trading rules, set goals, and
                   review their trading process.
@@ -167,9 +166,9 @@ function TermsPage() {
                 </h2>
 
                 <p className="mt-3">
-                  Recordium is not a financial adviser, broker, investment
+                  Meridian is not a financial adviser, broker, investment
                   manager, or trading signal service. Information entered,
-                  displayed, or calculated within Recordium is provided for
+                  displayed, or calculated within Meridian is provided for
                   record-keeping and informational purposes only.
                 </p>
 
@@ -187,8 +186,8 @@ function TermsPage() {
 
                 <p className="mt-3">
                   You are responsible for maintaining accurate information
-                  within your Recordium account and for keeping your login
-                  credentials secure. You must not use Recordium for unlawful,
+                  within your Meridian account and for keeping your login
+                  credentials secure. You must not use Meridian for unlawful,
                   fraudulent, abusive, or unauthorized activities.
                 </p>
               </section>
@@ -199,9 +198,9 @@ function TermsPage() {
                 </h2>
 
                 <p className="mt-3">
-                  Your Recordium account is intended for your personal use.
+                  Your Meridian account is intended for your personal use.
                   You are responsible for the activity carried out through
-                  your account. Recordium may store information necessary to
+                  your account. Meridian may store information necessary to
                   provide and improve the application's functionality.
                 </p>
               </section>
@@ -212,7 +211,7 @@ function TermsPage() {
                 </h2>
 
                 <p className="mt-3">
-                  Recordium may occasionally experience interruptions,
+                  Meridian may occasionally experience interruptions,
                   maintenance periods, technical issues, or changes to
                   functionality. We do not guarantee uninterrupted or
                   error-free availability of the service.
@@ -225,7 +224,7 @@ function TermsPage() {
                 </h2>
 
                 <p className="mt-3">
-                  You may not attempt to compromise the security of Recordium,
+                  You may not attempt to compromise the security of Meridian,
                   access another user's account, interfere with the service,
                   reverse engineer protected functionality, or use the
                   application for malicious purposes.
@@ -238,7 +237,7 @@ function TermsPage() {
                 </h2>
 
                 <p className="mt-3">
-                  These Terms may be updated as Recordium evolves. When a new
+                  These Terms may be updated as Meridian evolves. When a new
                   version requires renewed acceptance, you may be asked to
                   review and accept the updated Terms before continuing to use
                   the application.
@@ -251,8 +250,8 @@ function TermsPage() {
                 </h2>
 
                 <p className="mt-3">
-                  If you have questions about these Terms or Recordium,
-                  contact the Recordium team through the official support
+                  If you have questions about these Terms or Meridian,
+                  contact the Meridian team through the official support
                   channel associated with the application.
                 </p>
               </section>
@@ -278,7 +277,7 @@ function TermsPage() {
             />
 
             <span className="text-sm leading-6 text-[var(--text-secondary)]">
-              I have read and agree to Recordium's Terms & Conditions.
+              I have read and agree to Meridian's Terms & Conditions.
             </span>
           </label>
 
@@ -307,7 +306,7 @@ function TermsPage() {
           </button>
 
           <p className="mt-6 text-center text-[11px] leading-5 text-[var(--text-muted)]">
-            You must accept these terms to access your Recordium workspace.
+            You must accept these terms to access your Meridian workspace.
           </p>
         </section>
       </div>

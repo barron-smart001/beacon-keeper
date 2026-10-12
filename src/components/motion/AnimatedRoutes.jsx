@@ -98,7 +98,7 @@ function AnimatedRoutes() {
             }
           />
 
-          {/* Recordium application requires accepted Terms */}
+          {/* Meridian application requires accepted Terms */}
           <Route element={<TermsGuard />}>
             <Route path="/app" element={<DashboardPage />} />
 

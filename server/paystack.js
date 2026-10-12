@@ -40,6 +40,30 @@ export function getPlanFromMetadata(metadata) {
   return plan;
 }
 
+export async function fetchPaystackTransaction(secretKey, reference) {
+  const response = await fetch(
+    `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        Accept: "application/json",
+      },
+    }
+  );
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok || !payload?.status || !payload?.data) {
+    const error = new Error(
+      payload?.message || "Paystack could not verify this payment."
+    );
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload.data;
+}
+
 export async function recordSuccessfulPayment(
   adminClient,
   { userId, reference, amount, currency, paidAt, plan }

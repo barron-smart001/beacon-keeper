@@ -51,7 +51,7 @@ function BillingConfirmationPage() {
 
       const accessToken = session?.access_token;
       if (!accessToken) {
-        throw new Error("Your Recordium session is no longer active. Please sign in again.");
+        throw new Error("Your Meridian session is no longer active. Please sign in again.");
       }
 
       const response = await fetch("/api/paystack/initialize", {
@@ -275,7 +275,7 @@ function BillingConfirmationPage() {
                   <ul className="mt-4 space-y-3">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 size={16} className="mt-0.5 text-[var(--accent)]" />
-                      <span>Full Recordium Pro access</span>
+                      <span>Full Meridian Pro access</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 size={16} className="mt-0.5 text-[var(--accent)]" />
