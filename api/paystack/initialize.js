@@ -1,12 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
-import { PLANS, PRODUCT } from "../../server/paystack.js";
+import {
+  PLANS,
+  PRODUCT,
+  recordPendingPayment,
+} from "../../server/paystack.js";
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLIC_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const PAYSTACK_CALLBACK_URL = process.env.PAYSTACK_CALLBACK_URL;
 const APP_URL = process.env.VITE_APP_URL || process.env.APP_URL;
@@ -151,6 +156,26 @@ export default async function handler(request, response) {
         502,
         payload?.message || "Paystack could not start the payment."
       );
+    }
+
+    // Track the checkout so it can be confirmed later even if the user never
+    // returns to the callback and the webhook is missed. Checkout still
+    // proceeds if this fails; the email-based recovery remains as a fallback.
+    if (SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        await recordPendingPayment(adminClient, {
+          userId,
+          reference: payload.data.reference || reference,
+          plan,
+        });
+      } catch (error) {
+        console.error("Unable to record pending payment:", error);
+      }
+    } else {
+      console.warn("SUPABASE_SERVICE_ROLE_KEY is not set; pending payments are not tracked.");
     }
 
     return response.status(200).json({

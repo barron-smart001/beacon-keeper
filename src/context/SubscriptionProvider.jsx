@@ -33,7 +33,7 @@ function getBillingPlanFromPayment(payment) {
 }
 
 export function SubscriptionProvider({ children }) {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, session, isLoading: isAuthLoading } = useAuth();
   const userId = user?.id || null;
   const requestId = useRef(0);
   const [subscription, setSubscription] = useState(INACTIVE_SUBSCRIPTION);
@@ -164,6 +164,45 @@ export function SubscriptionProvider({ children }) {
     subscription.status === "active" &&
     subscription.plan === "pro" &&
     hasValidExpiry;
+
+  // Not subscribed: once per sign-in, confirm any checkout that was paid but
+  // never recorded (the user closed Paystack before the callback, or the
+  // webhook was missed). Only pending references are checked, so it is cheap.
+  const accessToken = session?.access_token;
+  const recoveryCheckedFor = useRef(null);
+  useEffect(() => {
+    if (
+      isLoading ||
+      isSubscribed ||
+      !userId ||
+      !accessToken ||
+      recoveryCheckedFor.current === userId
+    ) {
+      return;
+    }
+    recoveryCheckedFor.current = userId;
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/paystack/verify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ sync: true, pendingOnly: true }),
+        });
+        const payload = await response.json().catch(() => null);
+        if (payload?.data?.recorded) {
+          await refresh();
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error("Missed payment check failed:", error);
+        }
+      }
+    })();
+  }, [accessToken, isLoading, isSubscribed, refresh, userId]);
 
   const value = useMemo(
     () => ({ subscription, isSubscribed, isLoading, refresh }),

@@ -21,6 +21,12 @@ function AuthPage({ mode }) {
 
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  // Where to go after signing in. Keeps the query string, e.g. a Paystack
+  // ?reference= that still needs verifying.
+  const from = location.state?.from;
+  const returnPath = from?.pathname
+    ? `${from.pathname}${from.search || ""}`
+    : "/app";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -134,9 +140,7 @@ function AuthPage({ mode }) {
         return;
       }
 
-      const destination = isSignUp
-        ? "/onboarding"
-        : location.state?.from?.pathname || "/app";
+      const destination = isSignUp ? "/onboarding" : returnPath;
 
       navigate(destination, { replace: true });
     } catch (error) {
@@ -155,7 +159,7 @@ function AuthPage({ mode }) {
     !isLoading &&
     user?.email_confirmed_at
   ) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to={returnPath} replace />;
   }
 
   return (

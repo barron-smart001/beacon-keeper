@@ -130,6 +130,7 @@ function BillingHistory({ userId, refreshToken }) {
         .from("payment_transactions")
         .select("reference, amount, currency, status, paid_at, created_at")
         .eq("user_id", userId)
+        .neq("status", "pending")
         .order("created_at", { ascending: false })
         .limit(10);
 
@@ -383,6 +384,9 @@ function BillingPage() {
       if (import.meta.env.DEV) {
         console.error("Paystack payment confirmation error:", error);
       }
+      // The background check for missed payments runs for everyone, including
+      // users who never paid, so its failures are not shown.
+      if (isSync) return;
       setNotice(
         error instanceof Error
           ? error.message

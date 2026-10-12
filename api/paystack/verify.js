@@ -117,18 +117,12 @@ export default async function handler(request, response) {
     );
 
     if (isSync) {
-      if (!userData.user.email) {
-        return response.status(200).json({
-          success: true,
-          data: { recorded: 0, subscription: null },
-        });
-      }
-
       let syncResult;
       try {
         syncResult = await syncUserPayments(adminClient, PAYSTACK_SECRET_KEY, {
           userId,
           email: userData.user.email,
+          pendingOnly: body.pendingOnly === true,
         });
       } catch (error) {
         console.error("Failed to sync Paystack payments:", error);

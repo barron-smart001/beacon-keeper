@@ -42,7 +42,11 @@ function TermsPage() {
         throw updateError;
       }
 
-      const destination = location.state?.from?.pathname || "/app";
+      // Keep the query string, e.g. a Paystack ?reference= to verify.
+      const from = location.state?.from;
+      const destination = from?.pathname
+        ? `${from.pathname}${from.search || ""}`
+        : "/app";
 
       navigate(destination, { replace: true });
     } catch (err) {
