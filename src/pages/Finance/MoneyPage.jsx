@@ -21,6 +21,8 @@ import {
   StaggerGroup,
 } from "../../components/motion/ScrollReveal";
 import UpgradeModal from "../../components/subscription/UpgradeModal";
+import { ALL_ACCOUNTS } from "../../context/AccountProvider";
+import { useAccounts } from "../../hooks/useAccounts";
 import useSubscription from "../../hooks/useSubscription";
 import { supabase } from "../../lib/supabase";
 
@@ -30,6 +32,7 @@ const EMPTY_FORM = {
   category: "",
   date: new Date().toISOString().split("T")[0],
   description: "",
+  account_id: "",
 };
 
 const MoneyPage = () => {
@@ -50,6 +53,13 @@ const MoneyPage = () => {
   const [formError, setFormError] = useState("");
 
   const { isSubscribed, isLoading } = useSubscription();
+  const { accounts, activeAccountId } = useAccounts();
+  const showingAll = activeAccountId === ALL_ACCOUNTS;
+  const defaultAccountId = showingAll ? accounts[0]?.id ?? "" : activeAccountId;
+  const accountName = (id) =>
+    accounts.find((account) => account.id === id)?.name ?? "Unassigned";
+  const inView = (transaction) =>
+    showingAll || transaction.account_id === activeAccountId;
 
   // ---------------------------------------------------------
   // LOAD USER DATA
@@ -57,7 +67,8 @@ const MoneyPage = () => {
 
   useEffect(() => {
     loadMoneyData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccountId]);
 
   async function loadMoneyData() {
     try {
@@ -82,6 +93,11 @@ const MoneyPage = () => {
           .from("money_transactions")
           .select("*")
           .eq("user_id", user.id)
+          .match(
+            activeAccountId === ALL_ACCOUNTS
+              ? {}
+              : { account_id: activeAccountId }
+          )
           .order("transaction_date", { ascending: false })
           .order("created_at", { ascending: false }),
 
@@ -172,6 +188,7 @@ const MoneyPage = () => {
 
     setFormData({
       ...EMPTY_FORM,
+      account_id: defaultAccountId,
       date: new Date().toISOString().split("T")[0],
     });
 
@@ -194,6 +211,7 @@ const MoneyPage = () => {
       category: transaction.category ?? "",
       date: transaction.transaction_date,
       description: transaction.description ?? "",
+      account_id: transaction.account_id ?? "",
     });
 
     setFormError("");
@@ -267,6 +285,7 @@ const MoneyPage = () => {
 
       const transactionData = {
         user_id: user.id,
+        account_id: formData.account_id || null,
         type: formData.type,
         amount,
         category: formData.category.trim() || null,
@@ -294,6 +313,7 @@ const MoneyPage = () => {
             .map((transaction) =>
               transaction.id === data.id ? data : transaction
             )
+            .filter(inView)
             .sort(sortTransactions)
         );
       }
@@ -311,7 +331,9 @@ const MoneyPage = () => {
         }
 
         setTransactions((current) =>
-          [data, ...current].sort(sortTransactions)
+          (inView(data) ? [data, ...current] : current).sort(
+            sortTransactions
+          )
         );
       }
 
@@ -333,6 +355,7 @@ const MoneyPage = () => {
 
     setFormData({
       ...EMPTY_FORM,
+      account_id: defaultAccountId,
       date: new Date().toISOString().split("T")[0],
     });
 
@@ -570,6 +593,7 @@ const MoneyPage = () => {
                     transaction={transaction}
                     formatAmount={formatAmount}
                     formatDate={formatDate}
+                    accountLabel={showingAll ? accountName(transaction.account_id) : null}
                     onEdit={openEditModal}
                     onDelete={deleteTransaction}
                     deleting={deletingId === transaction.id}
@@ -588,6 +612,7 @@ const MoneyPage = () => {
           saving={saving}
           error={formError}
           onChange={handleChange}
+          accounts={accounts}
           onSetType={(type) =>
             setFormData((current) => ({
               ...current,
@@ -689,6 +714,7 @@ function TransactionRow({
   transaction,
   formatAmount,
   formatDate,
+  accountLabel,
   onEdit,
   onDelete,
   deleting,
@@ -722,6 +748,12 @@ function TransactionRow({
             <span className="hidden text-xs text-[var(--text-muted)] sm:inline">
               {formatDate(transaction.transaction_date)}
             </span>
+
+            {accountLabel && (
+              <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
+                {accountLabel}
+              </span>
+            )}
           </div>
 
           <p className="mt-1 truncate text-xs text-[var(--text-muted)]">
@@ -802,6 +834,7 @@ function TransactionModal({
   error,
   onChange,
   onSetType,
+  accounts,
   onClose,
   onSubmit,
 }) {
@@ -908,6 +941,34 @@ function TransactionModal({
               className="mt-2 h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]"
             />
           </div>
+
+          {/* Account */}
+
+          {accounts.length > 0 && (
+            <div>
+              <label
+                htmlFor="account_id"
+                className="text-xs font-medium text-[var(--text-secondary)]"
+              >
+                Account
+              </label>
+
+              <select
+                id="account_id"
+                name="account_id"
+                value={formData.account_id}
+                onChange={onChange}
+                className="mt-2 h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)]"
+              >
+                <option value="">Unassigned</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Category */}
 

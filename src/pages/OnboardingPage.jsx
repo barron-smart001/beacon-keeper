@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, Check, ShieldCheck, WalletCards } from "lucide-r
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import RecordiumMark from "../components/ui/RecordiumMark";
+import { useAccounts } from "../hooks/useAccounts";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 
@@ -14,6 +15,7 @@ function OnboardingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ style: "", currency: "USD", account: "", rule: "" });
   const { user } = useAuth();
+  const { refresh: refreshAccounts } = useAccounts();
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -83,6 +85,7 @@ function OnboardingPage() {
         });
       if (completeProfileError) throw completeProfileError;
 
+      refreshAccounts();
       setNotice("Your setup is ready. Your first account and rule have been saved.");
     } catch (error) {
       console.error("Unable to complete onboarding:", error);

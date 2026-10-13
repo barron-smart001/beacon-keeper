@@ -3,15 +3,19 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import AppShell from "../components/app/AppShell";
 import { RevealItem, ScrollReveal, StaggerGroup } from "../components/motion/ScrollReveal";
+import { ALL_ACCOUNTS } from "../context/AccountProvider";
+import { useAccounts } from "../hooks/useAccounts";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 
 function DashboardPage() {
   const { user } = useAuth();
+  const { activeAccountId } = useAccounts();
+  const [currency, setCurrency] = useState(null);
   const [data, setData] = useState({ trades: [], money: [], rules: [], goals: [], error: false });
-  useEffect(() => { let mounted = true; async function loadDashboard() { const [trades, money, rules, goals] = await Promise.all([supabase.from("trades").select("status, pnl, instrument, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5), supabase.from("money_transactions").select("type, amount").eq("user_id", user.id), supabase.from("trading_rules").select("id").eq("user_id", user.id), supabase.from("goals").select("id, title, status").eq("user_id", user.id).eq("status", "active").limit(3)]); if (!mounted) return; setData({ trades: trades.data ?? [], money: money.data ?? [], rules: rules.data ?? [], goals: goals.data ?? [], error: Boolean(trades.error || money.error || rules.error || goals.error) }); } if (user?.id) loadDashboard(); return () => { mounted = false; }; }, [user?.id]);
+  useEffect(() => { let mounted = true; async function loadDashboard() { const scope = activeAccountId === ALL_ACCOUNTS ? {} : { account_id: activeAccountId }; const [trades, money, rules, goals] = await Promise.all([supabase.from("trades").select("status, pnl, instrument, created_at").eq("user_id", user.id).match(scope).order("created_at", { ascending: false }).limit(5), supabase.from("money_transactions").select("type, amount").eq("user_id", user.id).match(scope), supabase.from("trading_rules").select("id").eq("user_id", user.id), supabase.from("goals").select("id, title, status").eq("user_id", user.id).eq("status", "active").limit(3)]); if (!mounted) return; setData({ trades: trades.data ?? [], money: money.data ?? [], rules: rules.data ?? [], goals: goals.data ?? [], error: Boolean(trades.error || money.error || rules.error || goals.error) }); } if (user?.id) { loadDashboard(); supabase.from("profiles").select("default_currency").eq("id", user.id).single().then(({ data: profile }) => { if (mounted && profile?.default_currency) setCurrency(profile.default_currency); }); } return () => { mounted = false; }; }, [user?.id, activeAccountId]);
   const summary = useMemo(() => { const income = data.money.filter((item) => item.type === "income").reduce((total, item) => total + Number(item.amount), 0); const expense = data.money.filter((item) => item.type === "expense").reduce((total, item) => total + Number(item.amount), 0); const completed = data.trades.filter((item) => item.status === "completed"); return { income, expense, pnl: completed.reduce((total, item) => total + Number(item.pnl || 0), 0), active: data.trades.filter((item) => item.status === "active").length }; }, [data]);
-  function number(value) { return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2, signDisplay: "always" }).format(value); }
+  function number(value) { return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2, signDisplay: "always", ...(currency ? { style: "currency", currency } : {}) }).format(value); }
   function amountOrEmpty(value, hasRecords) { return hasRecords ? number(value) : "No records yet"; }
   const summaries = [["Money in", amountOrEmpty(summary.income, data.money.length > 0)], ["Money out", amountOrEmpty(summary.expense, data.money.length > 0)], ["Trading P/L", amountOrEmpty(summary.pnl, data.trades.some((trade) => trade.status === "completed"))], ["Active trades", data.trades.length ? String(summary.active) : "No records yet"]];
   return (

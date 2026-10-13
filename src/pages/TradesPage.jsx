@@ -13,6 +13,8 @@ import { useEffect, useState } from "react";
 import AppShell from "../components/app/AppShell";
 import { ScrollReveal } from "../components/motion/ScrollReveal";
 import UpgradeModal from "../components/subscription/UpgradeModal";
+import { ALL_ACCOUNTS } from "../context/AccountProvider";
+import { useAccounts } from "../hooks/useAccounts";
 import { useAuth } from "../hooks/useAuth";
 import useSubscription from "../hooks/useSubscription";
 import { supabase } from "../lib/supabase";
@@ -61,10 +63,13 @@ function TradeForm({
   onSave,
   editingTrade,
   isSaving,
+  accounts,
+  defaultAccountId,
 }) {
   const [form, setForm] = useState(
     editingTrade
       ? {
+          account_id: editingTrade.account_id ?? "",
           instrument: editingTrade.instrument ?? "",
           direction: editingTrade.direction ?? "long",
           entry: editingTrade.entry ?? "",
@@ -73,7 +78,7 @@ function TradeForm({
           status: editingTrade.status ?? "completed",
           notes: editingTrade.notes ?? "",
         }
-      : initialForm
+      : { ...initialForm, account_id: defaultAccountId }
   );
 
   const [error, setError] = useState("");
@@ -168,6 +173,26 @@ function TradeForm({
               placeholder="e.g. EUR/USD"
             />
           </label>
+
+          {accounts.length > 0 && (
+            <label className="text-sm font-medium">
+              Account
+              <select
+                name="account_id"
+                value={form.account_id}
+                onChange={update}
+                disabled={Boolean(editingTrade)}
+                className={fieldClass}
+              >
+                {editingTrade && <option value="">Unassigned</option>}
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <label className="text-sm font-medium">
             Direction
@@ -331,6 +356,10 @@ function TradesPage() {
 
   const { user } = useAuth();
   const { isSubscribed, isLoading } = useSubscription();
+  const { accounts, activeAccountId } = useAccounts();
+  const showingAll = activeAccountId === ALL_ACCOUNTS;
+  const accountName = (id) =>
+    accounts.find((account) => account.id === id)?.name ?? "Unassigned";
 
   function showToast(message, type = "success") {
     setNotice(message);
@@ -353,11 +382,18 @@ function TradesPage() {
     async function loadTrades() {
       if (!user?.id) return;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("trades")
         .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .eq("user_id", user.id);
+
+      if (activeAccountId !== ALL_ACCOUNTS) {
+        query = query.eq("account_id", activeAccountId);
+      }
+
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
 
       if (!active) return;
 
@@ -377,7 +413,7 @@ function TradesPage() {
     return () => {
       active = false;
     };
-  }, [user?.id]);
+  }, [user?.id, activeAccountId]);
 
   function openNewTrade() {
     if (isLoading) return;
@@ -469,6 +505,7 @@ function TradesPage() {
         .from("trades")
         .insert({
           user_id: user.id,
+          account_id: trade.account_id || null,
           instrument: trade.instrument.trim(),
           direction: trade.direction,
           status: trade.status,
@@ -493,7 +530,10 @@ function TradesPage() {
         return;
       }
 
-      setTrades((current) => [data, ...current]);
+      // Only list the new trade if it belongs to the account being viewed.
+      if (showingAll || data.account_id === activeAccountId) {
+        setTrades((current) => [data, ...current]);
+      }
       setFormOpen(false);
 
       showToast("Trade saved successfully.");
@@ -619,7 +659,9 @@ function TradesPage() {
               />
 
               <p className="mt-5 text-sm text-[var(--text-secondary)]">
-                No trades recorded yet.
+                {showingAll
+                  ? "No trades recorded yet."
+                  : "No trades recorded in this account yet."}
               </p>
 
               <button
@@ -639,6 +681,10 @@ function TradesPage() {
                     <th className="px-5 py-3 font-medium sm:px-6">
                       Instrument
                     </th>
+
+                    {showingAll && (
+                      <th className="px-5 py-3 font-medium">Account</th>
+                    )}
 
                     <th className="px-5 py-3 font-medium">
                       Direction
@@ -674,6 +720,12 @@ function TradesPage() {
                         <td className="px-5 py-4 font-medium sm:px-6">
                           {trade.instrument}
                         </td>
+
+                        {showingAll && (
+                          <td className="px-5 py-4 text-[var(--text-secondary)]">
+                            {accountName(trade.account_id)}
+                          </td>
+                        )}
 
                         <td className="px-5 py-4 capitalize text-[var(--text-secondary)]">
                           {trade.direction}
@@ -753,6 +805,8 @@ function TradesPage() {
           onSave={saveTrade}
           editingTrade={editingTrade}
           isSaving={isSaving}
+          accounts={accounts}
+          defaultAccountId={showingAll ? accounts[0]?.id ?? "" : activeAccountId}
         />
       )}
 
