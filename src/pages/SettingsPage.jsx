@@ -3,13 +3,11 @@ import {
   Check,
   ChevronRight,
   LogOut,
-  Mail,
   Moon,
   Plus,
   ShieldCheck,
   Settings2,
   Trash2,
-  UserRound,
   WalletCards,
   X,
 } from "lucide-react";
@@ -19,10 +17,13 @@ import { createPortal } from "react-dom";
 
 import { useNavigate } from "react-router-dom";
 
+import ProfileCard from "../components/profile/ProfileCard";
+import BrokerConnections from "../components/broker/BrokerConnections";
 import AppShell from "../components/app/AppShell";
 import { ScrollReveal } from "../components/motion/ScrollReveal";
 import UpgradeModal from "../components/subscription/UpgradeModal";
 
+import { useAccounts } from "../hooks/useAccounts";
 import { useAuth } from "../hooks/useAuth";
 import useSubscription from "../hooks/useSubscription";
 
@@ -33,6 +34,7 @@ const inputClass =
 
 function SettingsPage() {
   const { user, signOut: signOutFromAuth } = useAuth();
+  const { refresh: refreshAccounts, setActiveAccountId } = useAccounts();
   const navigate = useNavigate();
   const { isSubscribed, isLoading: subscriptionLoading } = useSubscription();
 
@@ -47,6 +49,7 @@ function SettingsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [modal, setModal] = useState(null);
+  const [accountToDelete, setAccountToDelete] = useState(null);
   const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
@@ -155,8 +158,50 @@ function SettingsPage() {
     }
 
     setAccounts((current) => [data, ...current]);
+    refreshAccounts();
     setAccountName("");
     setNotice("Account added.");
+  }
+
+  function requestDeleteTradingAccount(account) {
+    if (subscriptionLoading) return;
+
+    if (!isSubscribed) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    setAccountToDelete(account);
+    setModal("deleteTradingAccount");
+  }
+
+  async function deleteTradingAccount() {
+    if (!accountToDelete || isWorking) return;
+
+    setIsWorking(true);
+    setNotice("");
+
+    const { error } = await supabase
+      .from("accounts")
+      .delete()
+      .eq("id", accountToDelete.id)
+      .eq("user_id", user.id);
+
+    setIsWorking(false);
+
+    if (error) {
+      console.error("Trading account deletion failed:", error);
+      setNotice("We couldn't delete that account. Please try again.");
+      return;
+    }
+
+    setAccounts((current) =>
+      current.filter((account) => account.id !== accountToDelete.id)
+    );
+    refreshAccounts();
+    setAccountToDelete(null);
+    setModal(null);
+    setNotice("Account deleted. Its records are kept as Unassigned.");
   }
 
   async function sendPasswordReset() {
@@ -296,38 +341,7 @@ function SettingsPage() {
             </p>
           </div>
 
-          <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="grid size-12 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
-                  <UserRound size={20} />
-                </div>
-
-                <div>
-                  <h2 className="text-base font-medium">
-                    Profile
-                  </h2>
-
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                    Your TradeFrame account identity.
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--bg)] px-4 py-3">
-                <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)]">
-                  <Mail
-                    size={16}
-                    className="shrink-0 text-[var(--accent)]"
-                  />
-
-                  <span className="break-all">
-                    {user?.email || "No email available"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </article>
+          <ProfileCard />
         </ScrollReveal>
 
         {/* TRADING */}
@@ -464,9 +478,31 @@ function SettingsPage() {
                       </p>
                     </div>
 
-                    <span className="rounded-lg border border-[var(--border-soft)] px-2.5 py-1 font-mono text-xs text-[var(--text-muted)]">
-                      {account.currency}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveAccountId(account.id);
+                          navigate("/app/trades");
+                        }}
+                        className="text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-light)]"
+                      >
+                        View records
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => requestDeleteTradingAccount(account)}
+                        className="grid size-8 place-items-center rounded-full text-[var(--text-muted)] hover:text-[var(--danger)]"
+                        aria-label={`Delete ${account.name}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+
+                      <span className="rounded-lg border border-[var(--border-soft)] px-2.5 py-1 font-mono text-xs text-[var(--text-muted)]">
+                        {account.currency}
+                      </span>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -506,6 +542,21 @@ function SettingsPage() {
               </button>
             </form>
           </article>
+        </ScrollReveal>
+
+        {/* BROKER CONNECTIONS */}
+        <ScrollReveal as="section" className="mt-8">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              Broker connections
+            </p>
+          </div>
+
+          <BrokerConnections
+            isSubscribed={isSubscribed}
+            subscriptionLoading={subscriptionLoading}
+            onRequireUpgrade={() => setShowUpgradeModal(true)}
+          />
         </ScrollReveal>
 
         {/* APPLICATION */}
@@ -782,6 +833,60 @@ function SettingsPage() {
                     {isWorking
                       ? "Sending..."
                       : "Send reset email"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Delete trading account modal */}
+            {modal === "deleteTradingAccount" && accountToDelete && (
+              <>
+                <div className="flex items-start justify-between gap-5">
+                  <div>
+                    <div className="grid size-11 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--danger)]">
+                      <Trash2 size={19} />
+                    </div>
+
+                    <h2 className="mt-5 text-xl font-medium">
+                      Delete “{accountToDelete.name}”?
+                    </h2>
+
+                    <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                      The account will be removed. Its trades and money
+                      records are not deleted; they stay in your journal
+                      as Unassigned and appear under All accounts.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    disabled={isWorking}
+                    className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                    aria-label="Close"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+
+                <div className="mt-7 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    disabled={isWorking}
+                    className="min-h-11 rounded-full px-4 text-sm text-[var(--text-secondary)]"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={deleteTradingAccount}
+                    disabled={isWorking}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--danger)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 size={16} />
+                    {isWorking ? "Deleting..." : "Delete account"}
                   </button>
                 </div>
               </>
