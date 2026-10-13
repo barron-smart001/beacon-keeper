@@ -29,17 +29,23 @@ function TermsPage() {
     setIsSubmitting(true);
 
     try {
-      const { error: updateError } = await supabase
+      const { data: saved, error: updateError } = await supabase
         .from("profiles")
         .update({
           terms_accepted: true,
           terms_version: CURRENT_TERMS_VERSION,
           terms_accepted_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select("id");
 
       if (updateError) {
         throw updateError;
+      }
+
+      // An update that matches no row succeeds silently; don't proceed on it.
+      if (!saved?.length) {
+        throw new Error("Unable to save your acceptance. Please try again.");
       }
 
       // Keep the query string, e.g. a Paystack ?reference= to verify.

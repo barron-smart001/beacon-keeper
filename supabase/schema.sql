@@ -20,7 +20,10 @@ alter table public.profiles
   add column if not exists subscription_status text not null default 'inactive',
   add column if not exists subscription_plan text,
   add column if not exists subscription_started_at timestamptz,
-  add column if not exists subscription_expires_at timestamptz;
+  add column if not exists subscription_expires_at timestamptz,
+  add column if not exists terms_accepted boolean not null default false,
+  add column if not exists terms_version text,
+  add column if not exists terms_accepted_at timestamptz;
 
 create or replace function public.prevent_client_subscription_changes()
 returns trigger
