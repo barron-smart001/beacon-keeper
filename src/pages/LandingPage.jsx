@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -13,9 +13,11 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import FloatingBackground from "../components/motion/FloatingBackground";
+import { BILLING_PLAN_ORDER, BILLING_PLANS } from "../lib/billingPlans";
+import ScrollText from "../components/motion/ScrollText";
 import RecordiumMark from "../components/ui/RecordiumMark";
 
 const navItems = [
@@ -50,15 +52,15 @@ const faqs = [
 ];
 
 const reveal = {
-  hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 70, scale: 0.96 },
+  visible: { opacity: 1, y: 0, scale: 1 },
 };
 
 function SectionHeading({ eyebrow, title, body, centered = false }) {
   return (
     <div className={centered ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
       <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{eyebrow}</p>
-      <h2 className="text-balance text-3xl font-medium tracking-[-0.04em] text-[var(--text-primary)] transition-all duration-300 hover:text-[var(--accent-light)] hover:[text-shadow:0_0_18px_rgba(201,168,118,0.18)] sm:text-4xl lg:text-5xl">{title}</h2>
+      <ScrollText as="h2" className="text-balance text-3xl font-medium tracking-[-0.04em] text-[var(--text-primary)] transition-all duration-300 hover:text-[var(--accent-light)] hover:[text-shadow:0_0_18px_rgba(201,168,118,0.18)] sm:text-4xl lg:text-5xl" text={title} />
       {body && <p className="mt-5 text-base leading-7 text-[var(--text-secondary)] sm:text-lg">{body}</p>}
     </div>
   );
@@ -107,7 +109,7 @@ function ProductPreview() {
             {["Overview", "Trades", "Money", "Rules", "Goals"].map((item, index) => <div key={item} className={`mb-1 rounded-lg px-3 py-2 text-xs ${index === 0 ? "bg-[var(--surface-elevated)] text-[var(--text-primary)]" : "text-[var(--text-muted)]"}`}>{item}</div>)}
           </aside>
           <div className="p-4 sm:p-6">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs text-[var(--text-muted)]">Your daily command center</p><p className="mt-1 text-lg font-medium">Thursday, 13 August</p></div><button className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[#17130d]">Add record</button></div>
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs text-[var(--text-muted)]">Your daily command center</p><p className="mt-1 text-lg font-medium">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</p></div><button className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[#17130d]">Add record</button></div>
             <div className="grid gap-3 sm:grid-cols-3">
               {["Money in", "Money out", "Trading P/L"].map((label) => <div key={label} className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-4"><p className="text-xs text-[var(--text-muted)]">{label}</p><p className="mt-5 font-mono text-sm text-[var(--text-secondary)]">No records yet</p></div>)}
             </div>
@@ -125,10 +127,18 @@ function ProductPreview() {
 function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const reducedMotion = useReducedMotion();
-  const motionProps = reducedMotion ? {} : { initial: "hidden", whileInView: "visible", viewport: { once: true, amount: 0.2 }, variants: reveal, transition: { duration: 0.55 } };
+  const motionProps = reducedMotion ? {} : { initial: "hidden", whileInView: "visible", viewport: { once: true, amount: 0.2 }, variants: reveal, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } };
+
+  const heroRef = useRef(null);
+  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroFade = useTransform(heroProgress, [0, 0.7], [1, reducedMotion ? 1 : 0]);
+  const heroTextY = useTransform(heroProgress, [0, 1], ["0px", reducedMotion ? "0px" : "-120px"]);
+  const { scrollYProgress: pageProgress } = useScroll();
+  const progress = useSpring(pageProgress, { stiffness: 120, damping: 30 });
 
   return (
     <main className="relative bg-[var(--bg)] text-[var(--text-primary)]">
+      {!reducedMotion && <motion.div aria-hidden="true" style={{ scaleX: progress }} className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-[var(--accent)]" />}
       <FloatingBackground />
       <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur-sm">
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8" aria-label="Main navigation">
@@ -140,13 +150,14 @@ function LandingPage() {
         <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)] transition-all duration-300 hover:text-[var(--accent-light)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Get started</ButtonLink></div></motion.div>}</AnimatePresence>
       </header>
 
-      <section id="top" className="relative isolate border-b border-[var(--border-soft)]">
+      <section id="top" ref={heroRef} className="relative isolate border-b border-[var(--border-soft)]">
         <motion.div
           aria-hidden="true"
           className="pointer-events-none absolute left-1/2 top-[-260px] -z-10 h-[560px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(201,168,118,0.15),rgba(201,168,118,0.08)_22%,transparent_68%)] blur-[10px]"
           animate={reducedMotion ? { opacity: 0.45 } : { x: [-12, 18, -12], y: [0, 12, 0], scale: [1, 1.06, 0.98, 1], opacity: [0.42, 0.7, 0.54, 0.42] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
+        <motion.div style={{ opacity: heroFade, y: heroTextY }}>
         <motion.div {...motionProps} className="mx-auto max-w-7xl px-5 pb-20 pt-20 text-center sm:pb-24 sm:pt-28 lg:px-8 lg:pb-28">
           <p className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--text-secondary)]"><span className="size-1.5 rounded-full bg-[var(--accent)]" /> Built for intentional traders</p>
           <motion.h1
@@ -228,9 +239,10 @@ function LandingPage() {
             </motion.span>
           </motion.h1>
           <p className="mx-auto mt-7 max-w-2xl text-pretty text-base leading-7 text-[var(--text-secondary)] sm:text-lg">TradeFrame is the calm, complete record of how you trade and how you progress—one place to plan, record, review, and improve.</p>
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink href="#start" className="px-6">Get started <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink><ButtonLink secondary href="#features" className="px-6">Explore TradeFrame</ButtonLink></div>
+          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink to="/sign-up" className="px-6">Get started <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink><ButtonLink secondary href="#features" className="px-6">Explore TradeFrame</ButtonLink></div>
           <p className="mt-5 text-xs text-[var(--text-muted)]">No broker connection required.</p>
           <ProductPreview />
+        </motion.div>
         </motion.div>
       </section>
 
@@ -242,11 +254,11 @@ function LandingPage() {
 
       <section id="how-it-works" className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Your daily command center" title="Less noise. More useful reflection." body="Every view begins with your own records. TradeFrame makes the next right action obvious, whether that is planning your day or reviewing last week." /></motion.div><div className="mt-12 grid gap-4 lg:grid-cols-3">{[[Target, "Plan with intention", "Set financial, trading, and habit goals that give the day shape."], [TrendingUp, "Record the full picture", "Log trades and financial activity as it happens, in your own words."], [BarChart3, "Review to improve", "Use your history to recognize stronger decisions and recurring mistakes."]].map(([Icon, title, text], index) => <motion.div key={title} {...motionProps} transition={{ ...motionProps.transition, delay: index * 0.1 }} whileHover={reducedMotion ? undefined : { y: -6, borderColor: "rgba(201,168,118,0.4)", boxShadow: "0 14px 28px rgba(201,168,118,0.06)" }} className="relative rounded-2xl border border-[var(--border)] p-6"><motion.span initial={reducedMotion ? false : { opacity: 0, y: 10 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ duration: 0.45, delay: index * 0.1 }} className="font-mono text-xs text-[var(--accent)]">0{index + 1}</motion.span><motion.div initial={reducedMotion ? false : { opacity: 0, y: 12 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ duration: 0.45, delay: index * 0.1 + 0.08 }}><motion.div whileHover={reducedMotion ? undefined : { scale: 1.03 }} className="mt-12 inline-flex rounded-xl border border-[var(--border-soft)] bg-[rgba(201,168,118,0.04)] p-2.5 text-[var(--accent)]"><Icon size={24} /></motion.div><h3 className="mt-5 text-lg font-medium transition-colors duration-300 hover:text-[var(--accent-light)]">{title}</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{text}</p></motion.div></motion.div>)}</div></section>
 
-      <section id="pricing" className="border-y border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Simple by design" title="Start building a better record today." body="TradeFrame is being shaped carefully around the habits that make independent traders more intentional." /></motion.div><motion.div {...motionProps} whileHover={reducedMotion ? undefined : { y: -6, borderColor: "rgba(201,168,118,0.52)", boxShadow: "0 22px 38px rgba(201,168,118,0.08)" }} transition={{ duration: 0.25, ease: "easeOut" }} className="mx-auto mt-12 max-w-md rounded-2xl border border-[rgba(201,168,118,0.5)] bg-[var(--surface-elevated)] p-7"><p className="text-sm font-medium text-[var(--accent)]">Early access</p><h3 className="mt-3 text-2xl font-medium tracking-[-0.03em]">Start tracking free</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">Begin with your trade records, rules, goals, and personal money tracking.</p><ul className="my-7 space-y-3">{["Your private trading journal", "Personal rules and checklists", "Income and expense records", "Goals and daily reviews"].map((item) => <li key={item} className="flex gap-3 text-sm text-[var(--text-secondary)]"><Check className="shrink-0 text-[var(--accent)]" size={17} />{item}</li>)}</ul><ButtonLink href="#start" className="w-full">Get early access <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink></motion.div></div></section>
+      <section id="pricing" className="border-y border-[var(--border-soft)] bg-[var(--surface)]"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Simple by design" title="Start building a better record today." body="TradeFrame is being shaped carefully around the habits that make independent traders more intentional." /></motion.div><motion.div {...motionProps} whileHover={reducedMotion ? undefined : { y: -6, borderColor: "rgba(201,168,118,0.52)", boxShadow: "0 22px 38px rgba(201,168,118,0.08)" }} transition={{ duration: 0.25, ease: "easeOut" }} className="mx-auto mt-12 max-w-md rounded-2xl border border-[rgba(201,168,118,0.5)] bg-[var(--surface-elevated)] p-7"><p className="text-sm font-medium text-[var(--accent)]">TradeFrame Pro</p><h3 className="mt-3 text-2xl font-medium tracking-[-0.03em]">From {BILLING_PLANS.monthly.displayPrice} / month</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">Create an account to look around, then subscribe to record trades, rules, goals, and personal money tracking.</p><p className="mt-3 text-xs text-[var(--text-muted)]">{BILLING_PLAN_ORDER.map((id) => `${BILLING_PLANS[id].title} ${BILLING_PLANS[id].displayPrice}`).join(" · ")}</p><ul className="my-7 space-y-3">{["Your private trading journal", "Personal rules and checklists", "Income and expense records", "Goals and daily reviews"].map((item) => <li key={item} className="flex gap-3 text-sm text-[var(--text-secondary)]"><Check className="shrink-0 text-[var(--accent)]" size={17} />{item}</li>)}</ul><ButtonLink to="/sign-up" className="w-full">Get started <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink></motion.div></div></section>
 
       <section className="mx-auto max-w-3xl px-5 py-20 lg:py-28"><motion.div {...motionProps}><SectionHeading centered eyebrow="Questions" title="A calmer way to keep track." /></motion.div><div className="mt-10 divide-y divide-[var(--border)] border-y border-[var(--border)]">{faqs.map(([question, answer]) => <details key={question} className="group py-1"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-sm font-medium marker:content-none transition-colors duration-300 group-hover:text-[var(--accent-light)]">{question}<ChevronDown className="shrink-0 text-[var(--text-muted)] transition-all duration-300 group-open:rotate-180 group-hover:text-[var(--accent)]" size={18} /></summary><p className="max-w-2xl pb-5 text-sm leading-6 text-[var(--text-secondary)]">{answer}</p></details>)}</div></section>
 
-      <motion.section id="start" className="border-t border-[var(--border-soft)] bg-[var(--surface)]" initial={reducedMotion ? false : { opacity: 0, y: 24 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.55, ease: "easeOut" }}><div className="mx-auto max-w-5xl px-5 py-20 text-center lg:py-28"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Your process deserves a place</p><h2 className="text-balance mx-auto mt-5 max-w-3xl text-4xl font-medium tracking-[-0.05em] sm:text-5xl">Trade with more intention. Review with more honesty.</h2><p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[var(--text-secondary)]">Build the record that helps you show up for your trading practice every day.</p><ButtonLink href="mailto:hello@meridian.app" className="mt-8 px-6">Start tracking free <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink></div></motion.section>
+      <motion.section id="start" className="border-t border-[var(--border-soft)] bg-[var(--surface)]" initial={reducedMotion ? false : { opacity: 0, y: 24 }} whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.55, ease: "easeOut" }}><div className="mx-auto max-w-5xl px-5 py-20 text-center lg:py-28"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Your process deserves a place</p><h2 className="text-balance mx-auto mt-5 max-w-3xl text-4xl font-medium tracking-[-0.05em] sm:text-5xl">Trade with more intention. Review with more honesty.</h2><p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[var(--text-secondary)]">Build the record that helps you show up for your trading practice every day.</p><ButtonLink to="/sign-up" className="mt-8 px-6">Get started <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink></div></motion.section>
 
       <footer className="mt-auto border-t border-[var(--border-soft)] bg-[var(--surface)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-8 sm:flex-row sm:items-center sm:justify-between lg:px-8">
