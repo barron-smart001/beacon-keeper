@@ -466,7 +466,7 @@ function SettingsPage() {
                 accounts.map((account) => (
                   <div
                     key={account.id}
-                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                    className="flex items-center justify-between gap-4 py-4"
                   >
                     <div>
                       <p className="text-sm font-medium">
@@ -485,7 +485,7 @@ function SettingsPage() {
                           setActiveAccountId(account.id);
                           navigate("/app/trades");
                         }}
-                        className="whitespace-nowrap text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-light)]"
+                        className="text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-light)]"
                       >
                         View records
                       </button>
