@@ -39,6 +39,56 @@ function Navigation({ closeMenu, onRequestSignOut }) {
 </Link><button type="button" onClick={onRequestSignOut} className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"><LogOut size={18} />Sign out</button></nav>;
 }
 
+const primaryTabs = [
+  [LayoutDashboard, "Overview", "/app"],
+  [ClipboardCheck, "Trades", "/app/trades"],
+  [CircleDollarSign, "Money", "/app/money"],
+  [ShieldCheck, "Rules", "/app/rules"],
+];
+
+/** Thumb-reach navigation for phones and tablets; the rest lives under More. */
+function BottomTabs({ menuOpen, onToggleMore, onNavigate }) {
+  const { pathname } = useLocation();
+  const onPrimary = primaryTabs.some(([, , to]) => pathname === to);
+  const tab = "flex min-h-[58px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors";
+
+  return (
+    <nav
+      aria-label="Main"
+      data-bottom-tabs
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border-soft)] bg-[var(--bg)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+    >
+      <div className="mx-auto grid max-w-xl grid-cols-5">
+        {primaryTabs.map(([Icon, label, to]) => {
+          const active = pathname === to && !menuOpen;
+          return (
+            <Link
+              key={label}
+              to={to}
+              onClick={onNavigate}
+              aria-current={active ? "page" : undefined}
+              className={`${tab} ${active ? "text-[var(--accent)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+            >
+              <Icon size={21} strokeWidth={active ? 2.2 : 1.8} />
+              <span className="text-[11px] leading-none">{label}</span>
+            </Link>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={onToggleMore}
+          aria-expanded={menuOpen}
+          className={`${tab} ${menuOpen || !onPrimary ? "text-[var(--accent)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+        >
+          {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          <span className="text-[11px] leading-none">More</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 function SubscriptionIndicator({ compact = false }) {
   const { subscription, isSubscribed, isLoading } = useSubscription();
   const expiryDate = subscription.expiresAt
@@ -149,15 +199,18 @@ function AppShell({ children }) {
       <div className="min-w-0 lg:col-start-2">
         <header className={`sticky top-0 z-20 flex h-[68px] items-center justify-between gap-2 border-b border-[var(--border-soft)] px-3 backdrop-blur sm:px-5 ${isScrolled ? "bg-[var(--bg)]/90 shadow-[0_8px_24px_rgba(0,0,0,0.12)]" : "bg-[var(--bg)]/95"} ${reducedMotion ? "" : "transition-colors duration-300"} lg:hidden`}>
           <Link to="/" className="flex items-center gap-2.5 font-semibold"><RecordiumMark /> TradeFrame</Link>
-          <AccountSwitcher compact />
           <SubscriptionIndicator compact />
-          <button onClick={() => setMenuOpen((open) => !open)} className="grid size-10 place-items-center rounded-full border border-[var(--border)]" aria-label="Toggle application navigation" aria-expanded={menuOpen}>
-            {menuOpen ? <X size={18} /> : <Menu size={19} />}
-          </button>
+          <Link to="/app/settings" aria-label="Your profile" className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] text-sm font-semibold text-[var(--accent)]">
+            {avatarUrl ? <img src={avatarUrl} alt="" className="size-full object-cover" /> : initial}
+          </Link>
         </header>
 
+        <div className="border-b border-[var(--border-soft)] px-3 py-2 sm:px-5 lg:hidden">
+          <AccountSwitcher block />
+        </div>
+
         {menuOpen && (
-          <div className="fixed inset-x-0 bottom-0 top-[68px] z-10 bg-[var(--bg)] px-5 py-4 lg:hidden">
+          <div className="fixed inset-x-0 bottom-0 top-[68px] z-10 overflow-y-auto bg-[var(--bg)] px-5 pb-28 pt-2 lg:hidden">
             <Navigation closeMenu={() => setMenuOpen(false)} onRequestSignOut={() => setShowSignOutConfirm(true)} />
           </div>
         )}
@@ -170,7 +223,7 @@ function AppShell({ children }) {
           </Link>
         </header>
 
-        <main className="min-w-0">
+        <main className="min-w-0 pb-24 lg:pb-0">
           {paymentNotice && (
             <div role="status" className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 sm:mx-6 lg:mx-8">
               <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
@@ -182,6 +235,12 @@ function AppShell({ children }) {
           )}
           <PageTransition>{children}</PageTransition>
         </main>
+
+        <BottomTabs
+          menuOpen={menuOpen}
+          onToggleMore={() => setMenuOpen((open) => !open)}
+          onNavigate={() => setMenuOpen(false)}
+        />
       </div>
     </div>
 
