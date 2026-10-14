@@ -106,10 +106,3 @@ a {
 .text-balance {
   text-wrap: balance;
 }
-
-
-/* The phone tab bar steps aside while any dialog is open, so it can never
-   cover a form's buttons. */
-body:has([aria-modal="true"]) [data-bottom-tabs] {
-  display: none;
-}
