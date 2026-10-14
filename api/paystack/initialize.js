@@ -5,16 +5,17 @@ import {
   PRODUCT,
   recordPendingPayment,
 } from "../../server/paystack.js";
+import { env } from "../../server/env.js";
 
 const SUPABASE_URL =
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  env("SUPABASE_URL") || env("VITE_SUPABASE_URL");
 const SUPABASE_PUBLIC_KEY =
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-const PAYSTACK_CALLBACK_URL = process.env.PAYSTACK_CALLBACK_URL;
-const APP_URL = process.env.VITE_APP_URL || process.env.APP_URL;
+  env("VITE_SUPABASE_PUBLISHABLE_KEY") ||
+  env("SUPABASE_ANON_KEY");
+const SUPABASE_SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY");
+const PAYSTACK_SECRET_KEY = env("PAYSTACK_SECRET_KEY");
+const PAYSTACK_CALLBACK_URL = env("PAYSTACK_CALLBACK_URL");
+const APP_URL = env("VITE_APP_URL") || env("APP_URL");
 
 function errorResponse(response, status, message) {
   return response.status(status).json({ success: false, message });
