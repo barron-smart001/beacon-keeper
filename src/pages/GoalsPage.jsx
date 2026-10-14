@@ -287,7 +287,7 @@ function GoalsPage() {
 
         <StaggerGroup
           as="section"
-          className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-9 grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4"
         >
           {goalTypes.map((type) => {
             const count = activeGoals.filter(
@@ -298,18 +298,18 @@ function GoalsPage() {
               <RevealItem
                 as="article"
                 key={type}
-                className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5"
               >
                 <Flag
                   className="text-[var(--accent)]"
                   size={20}
                 />
 
-                <h2 className="mt-6 text-base font-medium capitalize">
+                <h2 className="mt-4 text-sm font-medium capitalize sm:mt-6 sm:text-base">
                   {type} goals
                 </h2>
 
-                <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)] sm:text-sm sm:leading-6">
                   {count
                     ? `${count} active ${
                         count === 1 ? "goal" : "goals"
@@ -373,8 +373,8 @@ function GoalsPage() {
                   </button>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-medium text-[var(--text-primary)]">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                      <h3 className="min-w-0 break-words text-sm font-medium text-[var(--text-primary)]">
                         {goal.title}
                       </h3>
 

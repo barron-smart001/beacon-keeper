@@ -651,24 +651,28 @@ function MetricCard({
         : "text-[var(--accent)]";
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-      <div className="flex items-center justify-between">
-        <div className="grid size-10 place-items-center rounded-xl border border-[var(--border)]">
-          <Icon size={18} className={iconClass} />
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+      <div className="flex items-center gap-4 sm:block">
+        <div className="flex items-center justify-between">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-[var(--border)]">
+            <Icon size={18} className={iconClass} />
+          </div>
+
+          {secondary && (
+            <span className="hidden text-xs text-[var(--text-muted)] sm:inline">
+              {secondary}
+            </span>
+          )}
         </div>
 
-        {secondary && (
-          <span className="text-xs text-[var(--text-muted)]">
-            {secondary}
-          </span>
-        )}
+        <div className="min-w-0 sm:mt-6">
+          <p className="text-sm text-[var(--text-secondary)]">{label}</p>
+
+          <p className="mt-1 break-words font-mono text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)] sm:text-2xl">
+            {value}
+          </p>
+        </div>
       </div>
-
-      <p className="mt-6 text-sm text-[var(--text-secondary)]">{label}</p>
-
-      <p className="mt-1 font-mono text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-        {value}
-      </p>
     </div>
   );
 }
@@ -724,8 +728,8 @@ function TransactionRow({
   const isIncome = transaction.type === "income";
 
   return (
-    <div className="group flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-[var(--surface-elevated)]/40">
-      <div className="flex min-w-0 items-center gap-3">
+    <div className="group px-4 py-4 transition hover:bg-[var(--surface-elevated)]/40 sm:px-5">
+      <div className="flex items-start gap-3">
         <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-[var(--border)]">
           {isIncome ? (
             <ArrowUpRight size={17} className="text-[var(--success)]" />
@@ -734,90 +738,82 @@ function TransactionRow({
           )}
         </div>
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-medium text-[var(--text-primary)]">
-              {transaction.category ||
-                (isIncome ? "Income" : "Expense")}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <p className="min-w-0 break-words text-sm font-medium text-[var(--text-primary)]">
+              {transaction.category || (isIncome ? "Income" : "Expense")}
             </p>
 
-            <span className="hidden text-xs text-[var(--text-muted)] sm:inline">
-              ·
-            </span>
+            <p
+              className={`shrink-0 font-mono text-sm font-semibold ${
+                isIncome ? "text-[var(--success)]" : "text-[var(--danger)]"
+              }`}
+            >
+              {isIncome ? "+" : "-"}
+              {formatAmount(transaction.amount)}
+            </p>
+          </div>
 
-            <span className="hidden text-xs text-[var(--text-muted)] sm:inline">
-              {formatDate(transaction.transaction_date)}
-            </span>
+          {transaction.description && (
+            <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">
+              {transaction.description}
+            </p>
+          )}
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
+            <span>{formatDate(transaction.transaction_date)}</span>
 
             {accountLabel && (
-              <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
+              <span className="max-w-full truncate rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px]">
                 {accountLabel}
               </span>
             )}
           </div>
-
-          <p className="mt-1 truncate text-xs text-[var(--text-muted)]">
-            {transaction.description ||
-              formatDate(transaction.transaction_date)}
-          </p>
         </div>
-      </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        <p
-          className={`font-mono text-sm font-semibold ${
-            isIncome
-              ? "text-[var(--success)]"
-              : "text-[var(--danger)]"
-          }`}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((current) => !current)}
+          disabled={deleting}
+          className="grid size-9 place-items-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)] disabled:opacity-50"
+          aria-label="Transaction options"
         >
-          {isIncome ? "+" : "-"}
-          {formatAmount(transaction.amount)}
-        </p>
-
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((current) => !current)}
-            disabled={deleting}
-            className="grid size-9 place-items-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)] disabled:opacity-50"
-            aria-label="Transaction options"
-          >
-            {deleting ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <MoreHorizontal size={17} />
-            )}
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 top-10 z-20 w-36 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-1 shadow-2xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onEdit(transaction);
-                }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--text-secondary)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
-              >
-                <Pencil size={14} />
-                Edit
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onDelete(transaction);
-                }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--danger)] transition hover:bg-[var(--surface)]"
-              >
-                <Trash2 size={14} />
-                Delete
-              </button>
-            </div>
+          {deleting ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <MoreHorizontal size={17} />
           )}
-        </div>
+        </button>
+
+        {menuOpen && (
+          <div className="absolute right-0 top-10 z-20 w-36 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-1 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onEdit(transaction);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--text-secondary)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete(transaction);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--danger)] transition hover:bg-[var(--surface)]"
+            >
+              <Trash2 size={14} />
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
       </div>
     </div>
   );
