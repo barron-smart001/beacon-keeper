@@ -137,7 +137,7 @@ function LandingPage() {
   const progress = useSpring(pageProgress, { stiffness: 120, damping: 30 });
 
   return (
-    <main className="relative bg-[var(--bg)] text-[var(--text-primary)]">
+    <main className="relative overflow-x-clip bg-[var(--bg)] text-[var(--text-primary)]">
       {!reducedMotion && <motion.div aria-hidden="true" style={{ scaleX: progress }} className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-[var(--accent)]" />}
       <FloatingBackground />
       <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur-sm">

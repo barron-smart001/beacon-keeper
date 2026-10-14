@@ -674,7 +674,77 @@ function TradesPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="divide-y divide-[var(--border-soft)] lg:hidden">
+              {trades.map((trade) => {
+                const locked = trade.edit_count >= 1;
+
+                return (
+                  <article key={trade.id} className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">
+                          {trade.instrument}
+                        </p>
+                        <p className="mt-1 text-xs capitalize text-[var(--text-muted)]">
+                          {trade.direction} · {trade.status}
+                          {showingAll ? ` · ${accountName(trade.account_id)}` : ""}
+                        </p>
+                      </div>
+
+                      <p
+                        className={`shrink-0 font-mono text-sm font-semibold ${
+                          trade.pnl !== null && trade.pnl > 0
+                            ? "text-[var(--success)]"
+                            : trade.pnl !== null && trade.pnl < 0
+                            ? "text-[var(--danger)]"
+                            : "text-[var(--text-muted)]"
+                        }`}
+                      >
+                        {formatPnl(trade.pnl)}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="font-mono text-xs text-[var(--text-secondary)]">
+                        {trade.entry}
+                        {trade.exit ? ` → ${trade.exit}` : ""}
+                      </p>
+
+                      {locked ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                          <Lock size={13} />
+                          Locked
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => openEditTrade(trade)}
+                            className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]"
+                          >
+                            <Pencil size={14} />
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => deleteTrade(trade)}
+                            disabled={deletingId === trade.id}
+                            className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--danger)] disabled:opacity-50"
+                          >
+                            <Trash2 size={14} />
+                            {deletingId === trade.id ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[620px] text-left text-sm">
                 <thead className="border-b border-[var(--border-soft)] text-xs text-[var(--text-muted)]">
                   <tr>
@@ -792,6 +862,7 @@ function TradesPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </ScrollReveal>
       </main>
