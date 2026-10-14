@@ -1,4 +1,4 @@
-import { Camera, ImagePlus, Loader2, Mail, RotateCcw, Trash2, X } from "lucide-react";
+import { Camera, ImagePlus, Loader2, Mail, RotateCcw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useProfile } from "../../context/ProfileProvider";
@@ -80,6 +80,8 @@ function ProfileCard() {
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState(null); // { type, text }
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const photoMenuRef = useRef(null);
   const cameraSupported = Boolean(navigator.mediaDevices?.getUserMedia);
 
   useEffect(() => {
@@ -91,6 +93,25 @@ function ProfileCard() {
       experience_level: details?.experience_level || "",
     });
   }, [details, user]);
+
+  // The photo menu closes on an outside click or Escape.
+  useEffect(() => {
+    if (!photoMenuOpen) return undefined;
+
+    function onPointerDown(event) {
+      if (!photoMenuRef.current?.contains(event.target)) setPhotoMenuOpen(false);
+    }
+    function onKeyDown(event) {
+      if (event.key === "Escape") setPhotoMenuOpen(false);
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [photoMenuOpen]);
 
   function update(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -180,108 +201,98 @@ function ProfileCard() {
     }
   }
 
-  async function removeAvatar() {
-    const previous = details?.avatar_path;
-    if (!previous || !user?.id || isUploading) return;
-
-    setIsUploading(true);
-    setMessage(null);
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_path: null })
-      .eq("id", user.id);
-
-    if (error) {
-      console.error("Avatar removal failed:", error);
-      setMessage({ type: "error", text: "We couldn't remove your photo. Please try again." });
-    } else {
-      await supabase.storage.from("avatars").remove([previous]);
-      await refresh();
-      setMessage({ type: "success", text: "Photo removed." });
-    }
-
-    setIsUploading(false);
-  }
-
   const initial = (displayName || "?").trim().charAt(0).toUpperCase();
 
   return (
     <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <div className="relative size-24 shrink-0">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="Your profile"
-              className="size-24 rounded-full border border-[var(--border)] object-cover"
-            />
-          ) : (
-            <div className="grid size-24 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] text-3xl font-semibold text-[var(--accent)]">
-              {initial}
-            </div>
-          )}
+      <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:gap-6 sm:text-left">
+        <div ref={photoMenuRef} className="relative shrink-0">
+          <input
+            ref={fileInput}
+            type="file"
+            accept={ACCEPTED_TYPES.join(",")}
+            onChange={chooseFile}
+            className="hidden"
+          />
 
-          {isUploading && (
-            <div className="absolute inset-0 grid place-items-center rounded-full bg-black/55">
-              <Loader2 size={20} className="animate-spin text-white" />
+          <button
+            type="button"
+            onClick={() => setPhotoMenuOpen((open) => !open)}
+            disabled={isUploading}
+            aria-label="Change profile photo"
+            aria-haspopup="menu"
+            aria-expanded={photoMenuOpen}
+            className="group relative block size-28 rounded-full outline-offset-4 focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-wait"
+          >
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Your profile"
+                className="size-28 rounded-full border border-[var(--border)] object-cover"
+              />
+            ) : (
+              <span className="grid size-28 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] text-4xl font-semibold text-[var(--accent)]">
+                {initial}
+              </span>
+            )}
+
+            {isUploading ? (
+              <span className="absolute inset-0 grid place-items-center rounded-full bg-black/55">
+                <Loader2 size={22} className="animate-spin text-white" />
+              </span>
+            ) : (
+              <span className="absolute bottom-0.5 right-0.5 grid size-9 place-items-center rounded-full border-2 border-[var(--surface)] bg-[var(--accent)] text-[#17130d] shadow-lg transition group-hover:bg-[var(--accent-light)]">
+                <Camera size={16} />
+              </span>
+            )}
+          </button>
+
+          {photoMenuOpen && (
+            <div
+              role="menu"
+              aria-label="Profile photo"
+              className="absolute left-1/2 top-full z-20 mt-3 w-52 -translate-x-1/2 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-1 text-left shadow-2xl sm:left-0 sm:translate-x-0"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setPhotoMenuOpen(false);
+                  fileInput.current?.click();
+                }}
+                className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[var(--text-primary)] transition hover:bg-[var(--surface)]"
+              >
+                <ImagePlus size={17} className="text-[var(--accent)]" />
+                Upload photo
+              </button>
+
+              {cameraSupported && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setPhotoMenuOpen(false);
+                    setCameraOpen(true);
+                  }}
+                  className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[var(--text-primary)] transition hover:bg-[var(--surface)]"
+                >
+                  <Camera size={17} className="text-[var(--accent)]" />
+                  Take photo
+                </button>
+              )}
             </div>
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-medium">{displayName || "Your profile"}</h2>
+          <h2 className="text-xl font-medium tracking-[-0.02em]">{displayName || "Your profile"}</h2>
           {details?.headline && (
             <p className="mt-1 text-sm text-[var(--text-secondary)]">{details.headline}</p>
           )}
-          <p className="mt-2 flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <p className="mt-2 flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] sm:justify-start">
             <Mail size={13} className="shrink-0 text-[var(--accent)]" />
             <span className="break-all">{user?.email || "No email available"}</span>
           </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <input
-              ref={fileInput}
-              type="file"
-              accept={ACCEPTED_TYPES.join(",")}
-              onChange={chooseFile}
-              className="hidden"
-            />
-
-            <button
-              type="button"
-              onClick={() => fileInput.current?.click()}
-              disabled={isUploading}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--border)] px-4 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] disabled:opacity-50"
-            >
-              <ImagePlus size={14} />
-              {avatarUrl ? "Change photo" : "Upload photo"}
-            </button>
-
-            {cameraSupported && (
-              <button
-                type="button"
-                onClick={() => setCameraOpen(true)}
-                disabled={isUploading}
-                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--border)] px-4 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] disabled:opacity-50"
-              >
-                <Camera size={14} />
-                Take photo
-              </button>
-            )}
-
-            {avatarUrl && (
-              <button
-                type="button"
-                onClick={removeAvatar}
-                disabled={isUploading}
-                className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--danger)] disabled:opacity-50"
-              >
-                <Trash2 size={14} />
-                Remove
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
