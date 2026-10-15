@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -109,7 +109,7 @@ function ProductPreview() {
             {["Overview", "Trades", "Money", "Rules", "Goals"].map((item, index) => <div key={item} className={`mb-1 rounded-lg px-3 py-2 text-xs ${index === 0 ? "bg-[var(--surface-elevated)] text-[var(--text-primary)]" : "text-[var(--text-muted)]"}`}>{item}</div>)}
           </aside>
           <div className="p-4 sm:p-6">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs text-[var(--text-muted)]">Your daily command center</p><p className="mt-1 text-lg font-medium">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</p></div><button className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[#17130d]">Add record</button></div>
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs text-[var(--text-muted)]">Your daily command center</p><p className="mt-1 text-lg font-medium">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</p></div><span aria-hidden="true" className="rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-[#17130d]">Add record</span></div>
             <div className="grid gap-3 sm:grid-cols-3">
               {["Money in", "Money out", "Trading P/L"].map((label) => <div key={label} className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-4"><p className="text-xs text-[var(--text-muted)]">{label}</p><p className="mt-5 font-mono text-sm text-[var(--text-secondary)]">No records yet</p></div>)}
             </div>
@@ -133,19 +133,19 @@ function LandingPage() {
   const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroFade = useTransform(heroProgress, [0, 0.7], [1, reducedMotion ? 1 : 0]);
   const heroTextY = useTransform(heroProgress, [0, 1], ["0px", reducedMotion ? "0px" : "-120px"]);
-  const { scrollYProgress: pageProgress } = useScroll();
-  const progress = useSpring(pageProgress, { stiffness: 120, damping: 30 });
 
   return (
     <main className="relative overflow-x-clip bg-[var(--bg)] text-[var(--text-primary)]">
-      {!reducedMotion && <motion.div aria-hidden="true" style={{ scaleX: progress }} className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-[var(--accent)]" />}
       <FloatingBackground />
       <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg)]/95 backdrop-blur-sm">
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8" aria-label="Main navigation">
           <a href="#top" className="flex items-center gap-2.5 font-semibold tracking-[-0.03em]"><RecordiumMark /> TradeFrame</a>
           <div className="hidden items-center gap-7 md:flex">{navItems.map(([label, href]) => <a key={label} href={href} className="text-sm text-[var(--text-secondary)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-[var(--accent-light)] hover:[text-shadow:0_0_18px_rgba(201,168,118,0.2)]">{label}</a>)}</div>
           <div className="hidden items-center gap-4 md:flex"><Link to="/sign-in" className="text-sm font-medium text-[var(--text-secondary)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:text-[var(--accent-light)] hover:[text-shadow:0_0_18px_rgba(201,168,118,0.2)]">Sign in</Link><ButtonLink to="/sign-up">Get started</ButtonLink></div>
-          <button type="button" className="grid size-11 place-items-center rounded-full border border-[var(--border)] md:hidden" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={19} /> : <Menu size={20} />}</button>
+          <div className="flex items-center gap-2 md:hidden">
+            <Link to="/sign-in" className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-[var(--text-secondary)] transition hover:text-[var(--accent-light)]">Sign in</Link>
+          <button type="button" className="grid size-11 place-items-center rounded-full border border-[var(--border)]" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={19} /> : <Menu size={20} />}</button>
+          </div>
         </nav>
         <AnimatePresence>{menuOpen && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-[var(--border-soft)] md:hidden"><div className="space-y-1 px-5 py-4">{navItems.map(([label, href]) => <a key={label} href={href} onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-3 text-sm text-[var(--text-secondary)] transition-all duration-300 hover:text-[var(--accent-light)]">{label}</a>)}<ButtonLink to="/sign-up" className="mt-3 w-full">Get started</ButtonLink></div></motion.div>}</AnimatePresence>
       </header>
@@ -239,7 +239,7 @@ function LandingPage() {
             </motion.span>
           </motion.h1>
           <p className="mx-auto mt-7 max-w-2xl text-pretty text-base leading-7 text-[var(--text-secondary)] sm:text-lg">TradeFrame is the calm, complete record of how you trade and how you progress—one place to plan, record, review, and improve.</p>
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink to="/sign-up" className="px-6">Get started <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink><ButtonLink secondary href="#features" className="px-6">Explore TradeFrame</ButtonLink></div>
+          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><ButtonLink to="/sign-up" className="px-6">Get started <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" /></ButtonLink><ButtonLink secondary to="/sign-in" className="px-6">Sign in</ButtonLink></div>
           <p className="mt-5 text-xs text-[var(--text-muted)]">No broker connection required.</p>
           <ProductPreview />
         </motion.div>
@@ -267,6 +267,7 @@ function LandingPage() {
           <div className="flex gap-5 text-xs text-[var(--text-secondary)]">
             <a href="#features" className="transition hover:text-[var(--text-primary)]">Features</a>
             <a href="#pricing" className="transition hover:text-[var(--text-primary)]">Pricing</a>
+            <Link to="/sign-in" className="transition hover:text-[var(--text-primary)]">Sign in</Link>
           </div>
         </div>
       </footer>
