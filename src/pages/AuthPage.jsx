@@ -122,21 +122,28 @@ function AuthPage({ mode }) {
             password,
           });
 
+      // Someone who has not verified their email yet is sent to the
+      // "check your email" page, where they can resend the link.
+      const goToCheckEmail = () =>
+        navigate("/check-email", { replace: true, state: { email } });
+
       if (error) {
+        if (error.code === "email_not_confirmed" || /not confirmed/i.test(error.message)) {
+          goToCheckEmail();
+          return;
+        }
         setMessage(error.message);
         return;
       }
 
       if (isSignUp && !authData.session) {
-        setMessage("Check Your Email For Verification");
+        goToCheckEmail();
         return;
       }
 
       if (!authData.user?.email_confirmed_at) {
         await supabase.auth.signOut();
-        setMessage(
-          "Please verify your email address before signing in."
-        );
+        goToCheckEmail();
         return;
       }
 

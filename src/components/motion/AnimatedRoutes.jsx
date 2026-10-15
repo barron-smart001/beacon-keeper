@@ -14,6 +14,7 @@ import CalendarPage from "../../pages/CalendarPage";
 import BillingPage from "../../pages/BillingPage";
 import BillingConfirmationPage from "../../pages/BillingConfirmationPage";
 import SettingsPage from "../../pages/SettingsPage";
+import CheckEmailPage from "../../pages/CheckEmailPage";
 import TermsPage from "../../pages/TermsPage";
 
 import ProtectedRoute from "../../routes/ProtectedRoute";
@@ -53,6 +54,15 @@ function AnimatedRoutes() {
           element={
             <PageTransition calm>
               <AuthPage mode="sign-up" />
+            </PageTransition>
+          }
+        />
+
+        <Route
+          path="/check-email"
+          element={
+            <PageTransition calm>
+              <CheckEmailPage />
             </PageTransition>
           }
         />
