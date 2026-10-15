@@ -66,7 +66,7 @@ function DashboardPage() {
               className="min-w-0 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5"
             >
               <p className="text-xs text-[var(--text-muted)]">{label}</p>
-              <p className="mt-4 break-words font-mono text-sm text-[var(--text-secondary)] sm:mt-6">
+              <p className="mt-4 [overflow-wrap:anywhere] font-mono text-sm text-[var(--text-secondary)] sm:mt-6">
                 {value}
               </p>
             </RevealItem>
@@ -79,7 +79,7 @@ function DashboardPage() {
         >
           <RevealItem
             as="article"
-            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
+            className="min-w-0 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -96,7 +96,7 @@ function DashboardPage() {
                   <RevealItem
                     as="p"
                     key={goal.id}
-                    className="py-4 text-sm text-[var(--text-secondary)]"
+                    className="min-w-0 py-4 text-sm text-[var(--text-secondary)] [overflow-wrap:anywhere]"
                   >
                     {goal.title}
                   </RevealItem>
@@ -118,7 +118,7 @@ function DashboardPage() {
           </RevealItem>
           <RevealItem
             as="article"
-            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
+            className="min-w-0 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
           >
             <ClipboardCheck className="text-[var(--accent)]" size={21} />
             <h2 className="mt-7 text-base font-medium">Your rule check</h2>
@@ -159,12 +159,12 @@ function DashboardPage() {
                 <RevealItem
                   as="div"
                   key={`${trade.instrument}-${trade.created_at}`}
-                  className="flex items-center justify-between py-4"
+                  className="flex items-center justify-between gap-3 py-4"
                 >
-                  <span className="text-sm font-medium">
+                  <span className="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">
                     {trade.instrument}
                   </span>
-                  <span className="font-mono text-xs text-[var(--text-secondary)]">
+                  <span className="shrink-0 font-mono text-xs text-[var(--text-secondary)]">
                     {trade.pnl === null
                       ? "Active"
                       : number(Number(trade.pnl))}

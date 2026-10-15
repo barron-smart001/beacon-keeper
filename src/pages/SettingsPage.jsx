@@ -798,7 +798,7 @@ function SettingsPage() {
                       instructions to:
                     </p>
 
-                    <div className="mt-4 rounded-xl border border-[var(--border-soft)] bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text-primary)]">
+                    <div className="mt-4 rounded-xl border border-[var(--border-soft)] bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text-primary)] [overflow-wrap:anywhere]">
                       {user?.email || "No email available"}
                     </div>
                   </div>

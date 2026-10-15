@@ -49,8 +49,8 @@ body {
   margin: 0;
   min-width: 320px;
   overflow-x: hidden;
-  /* A very long word or number wraps instead of pushing the page wider than the screen. */
-  overflow-wrap: anywhere;
+  /* If a box is too narrow for a very long word, break it rather than spill out. */
+  overflow-wrap: break-word;
   background: var(--bg);
   color: var(--text-primary);
   font-family: "Inter", sans-serif;

@@ -427,7 +427,7 @@ function RulesPage() {
                     key={rule.description}
                     className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-soft)] bg-[var(--bg)] px-4 py-3"
                   >
-                    <span className="text-sm text-[var(--text-secondary)]">
+                    <span className="min-w-0 text-sm text-[var(--text-secondary)] [overflow-wrap:anywhere]">
                       {rule.description}
                     </span>
 
@@ -496,7 +496,7 @@ function RulesPage() {
 
                     {/* Rule content */}
                     <div className="min-w-0 flex-1 pt-1">
-                      <p className="text-sm leading-6 text-[var(--text-secondary)]">
+                      <p className="text-sm leading-6 text-[var(--text-secondary)] [overflow-wrap:anywhere]">
                         {rule.description}
                       </p>
                     </div>

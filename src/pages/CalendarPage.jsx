@@ -295,7 +295,7 @@ function CalendarPage() {
             >
               <p className="text-xs text-[var(--text-muted)]">{stat.label}</p>
               <p
-                className={`mt-2 break-words font-mono text-lg font-semibold tracking-[-0.02em] sm:text-xl ${
+                className={`mt-2 [overflow-wrap:anywhere] font-mono text-lg font-semibold tracking-[-0.02em] sm:text-xl ${
                   stat.tone === "good"
                     ? "text-[var(--success)]"
                     : stat.tone === "bad"

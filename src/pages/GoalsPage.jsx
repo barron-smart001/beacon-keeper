@@ -374,7 +374,7 @@ function GoalsPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                      <h3 className="min-w-0 break-words text-sm font-medium text-[var(--text-primary)]">
+                      <h3 className="min-w-0 [overflow-wrap:anywhere] text-sm font-medium text-[var(--text-primary)]">
                         {goal.title}
                       </h3>
 
@@ -384,7 +384,7 @@ function GoalsPage() {
                     </div>
 
                     {goal.notes && (
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)] [overflow-wrap:anywhere]">
                         {goal.notes}
                       </p>
                     )}
