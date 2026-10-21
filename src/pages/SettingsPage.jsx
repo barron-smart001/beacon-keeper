@@ -4,7 +4,6 @@ import {
   ChevronRight,
   LogOut,
   Moon,
-  Plus,
   ShieldCheck,
   Settings2,
   Trash2,
@@ -15,7 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import ProfileCard from "../components/profile/ProfileCard";
 import BrokerConnections from "../components/broker/BrokerConnections";
@@ -23,7 +22,6 @@ import AppShell from "../components/app/AppShell";
 import { ScrollReveal } from "../components/motion/ScrollReveal";
 import UpgradeModal from "../components/subscription/UpgradeModal";
 
-import { useAccounts } from "../hooks/useAccounts";
 import { useAuth } from "../hooks/useAuth";
 import useSubscription from "../hooks/useSubscription";
 
@@ -34,7 +32,6 @@ const inputClass =
 
 function SettingsPage() {
   const { user, signOut: signOutFromAuth } = useAuth();
-  const { refresh: refreshAccounts, setActiveAccountId } = useAccounts();
   const navigate = useNavigate();
   const { isSubscribed, isLoading: subscriptionLoading } = useSubscription();
 
@@ -43,36 +40,25 @@ function SettingsPage() {
     trading_style: "",
   });
 
-  const [accounts, setAccounts] = useState([]);
-  const [accountName, setAccountName] = useState("");
   const [notice, setNotice] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [modal, setModal] = useState(null);
-  const [accountToDelete, setAccountToDelete] = useState(null);
   const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadSettings() {
-      const [profileResult, accountsResult] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("default_currency, trading_style")
-          .eq("id", user.id)
-          .maybeSingle(),
-
-        supabase
-          .from("accounts")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-      ]);
+      const profileResult = await supabase
+        .from("profiles")
+        .select("default_currency, trading_style")
+        .eq("id", user.id)
+        .maybeSingle();
 
       if (!mounted) return;
 
-      if (profileResult.error || accountsResult.error) {
+      if (profileResult.error) {
         setNotice(
           "We couldn't load all of your settings. Please refresh and try again."
         );
@@ -87,9 +73,6 @@ function SettingsPage() {
         });
       }
 
-      if (accountsResult.data) {
-        setAccounts(accountsResult.data);
-      }
     }
 
     if (user?.id) {
@@ -122,86 +105,6 @@ function SettingsPage() {
     }
 
     setNotice("Preferences saved.");
-  }
-
-  async function addAccount(event) {
-    event.preventDefault();
-
-    if (subscriptionLoading) return;
-
-    if (!isSubscribed) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    const name = accountName.trim();
-
-    if (!name) return;
-
-    setNotice("");
-
-    const { data, error } = await supabase
-      .from("accounts")
-      .insert({
-        user_id: user.id,
-        name,
-        currency: profile.default_currency,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      setNotice(
-        "We couldn't add that account. Please try again."
-      );
-      return;
-    }
-
-    setAccounts((current) => [data, ...current]);
-    refreshAccounts();
-    setAccountName("");
-    setNotice("Account added.");
-  }
-
-  function requestDeleteTradingAccount(account) {
-    if (subscriptionLoading) return;
-
-    if (!isSubscribed) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    setAccountToDelete(account);
-    setModal("deleteTradingAccount");
-  }
-
-  async function deleteTradingAccount() {
-    if (!accountToDelete || isWorking) return;
-
-    setIsWorking(true);
-    setNotice("");
-
-    const { error } = await supabase
-      .from("accounts")
-      .delete()
-      .eq("id", accountToDelete.id)
-      .eq("user_id", user.id);
-
-    setIsWorking(false);
-
-    if (error) {
-      console.error("Trading account deletion failed:", error);
-      setNotice("We couldn't delete that account. Please try again.");
-      return;
-    }
-
-    setAccounts((current) =>
-      current.filter((account) => account.id !== accountToDelete.id)
-    );
-    refreshAccounts();
-    setAccountToDelete(null);
-    setModal(null);
-    setNotice("Account deleted. Its records are kept as Unassigned.");
   }
 
   async function sendPasswordReset() {
@@ -443,105 +346,23 @@ function SettingsPage() {
             </p>
           </div>
 
-          <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
-            <div className="flex items-start gap-4">
-              <div className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
-                <WalletCards size={20} />
-              </div>
-
-              <div>
-                <h2 className="text-base font-medium">
-                  Accounts
-                </h2>
-
-                <p className="mt-1 max-w-xl text-sm leading-6 text-[var(--text-secondary)]">
-                  Keep personal, broker, demo, and other trading
-                  records separated.
-                </p>
-              </div>
+          <Link
+            to="/app/accounts"
+            className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:bg-[var(--surface-elevated)] sm:p-6"
+          >
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
+              <WalletCards size={20} />
             </div>
 
-            <div className="mt-6 divide-y divide-[var(--border-soft)] border-y border-[var(--border-soft)]">
-              {accounts.length ? (
-                accounts.map((account) => (
-                  <div
-                    key={account.id}
-                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {account.name}
-                      </p>
-
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">
-                        Trading account
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveAccountId(account.id);
-                          navigate("/app/trades");
-                        }}
-                        className="whitespace-nowrap text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-light)]"
-                      >
-                        View records
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => requestDeleteTradingAccount(account)}
-                        className="grid size-8 place-items-center rounded-full text-[var(--text-muted)] hover:text-[var(--danger)]"
-                        aria-label={`Delete ${account.name}`}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-
-                      <span className="rounded-lg border border-[var(--border-soft)] px-2.5 py-1 font-mono text-xs text-[var(--text-muted)]">
-                        {account.currency}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="py-5 text-sm text-[var(--text-secondary)]">
-                  No accounts recorded yet.
-                </p>
-              )}
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-medium">Manage your accounts</h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+                Add, switch and delete trading accounts on the Accounts page.
+              </p>
             </div>
 
-            <form
-              onSubmit={addAccount}
-              className="mt-5 flex flex-col gap-3 sm:flex-row"
-            >
-              <label
-                className="sr-only"
-                htmlFor="account-name"
-              >
-                Account name
-              </label>
-
-              <input
-                id="account-name"
-                value={accountName}
-                onChange={(event) =>
-                  setAccountName(event.target.value)
-                }
-                className="min-h-11 flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                placeholder="e.g. Exness Standard"
-              />
-
-              <button
-                type="submit"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--border)] px-5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-elevated)]"
-              >
-                <Plus size={16} />
-                Add account
-              </button>
-            </form>
-          </article>
+            <ChevronRight size={18} className="shrink-0 text-[var(--text-muted)]" />
+          </Link>
         </ScrollReveal>
 
         {/* BROKER CONNECTIONS */}
@@ -833,60 +654,6 @@ function SettingsPage() {
                     {isWorking
                       ? "Sending..."
                       : "Send reset email"}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* Delete trading account modal */}
-            {modal === "deleteTradingAccount" && accountToDelete && (
-              <>
-                <div className="flex items-start justify-between gap-5">
-                  <div>
-                    <div className="grid size-11 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--danger)]">
-                      <Trash2 size={19} />
-                    </div>
-
-                    <h2 className="mt-5 text-xl font-medium">
-                      Delete “{accountToDelete.name}”?
-                    </h2>
-
-                    <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                      The account will be removed. Its trades and money
-                      records are not deleted; they stay in your journal
-                      as Unassigned and appear under All accounts.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    disabled={isWorking}
-                    className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
-                    aria-label="Close"
-                  >
-                    <X size={17} />
-                  </button>
-                </div>
-
-                <div className="mt-7 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    disabled={isWorking}
-                    className="min-h-11 rounded-full px-4 text-sm text-[var(--text-secondary)]"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={deleteTradingAccount}
-                    disabled={isWorking}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--danger)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Trash2 size={16} />
-                    {isWorking ? "Deleting..." : "Delete account"}
                   </button>
                 </div>
               </>
