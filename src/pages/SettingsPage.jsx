@@ -4,6 +4,7 @@ import {
   ChevronRight,
   LogOut,
   Moon,
+  PlugZap,
   ShieldCheck,
   Settings2,
   Trash2,
@@ -17,13 +18,10 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 
 import ProfileCard from "../components/profile/ProfileCard";
-import BrokerConnections from "../components/broker/BrokerConnections";
 import AppShell from "../components/app/AppShell";
 import { ScrollReveal } from "../components/motion/ScrollReveal";
-import UpgradeModal from "../components/subscription/UpgradeModal";
 
 import { useAuth } from "../hooks/useAuth";
-import useSubscription from "../hooks/useSubscription";
 
 import { supabase } from "../lib/supabase";
 
@@ -33,7 +31,6 @@ const inputClass =
 function SettingsPage() {
   const { user, signOut: signOutFromAuth } = useAuth();
   const navigate = useNavigate();
-  const { isSubscribed, isLoading: subscriptionLoading } = useSubscription();
 
   const [profile, setProfile] = useState({
     default_currency: "USD",
@@ -41,7 +38,6 @@ function SettingsPage() {
   });
 
   const [notice, setNotice] = useState("");
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [modal, setModal] = useState(null);
   const [isWorking, setIsWorking] = useState(false);
@@ -373,11 +369,23 @@ function SettingsPage() {
             </p>
           </div>
 
-          <BrokerConnections
-            isSubscribed={isSubscribed}
-            subscriptionLoading={subscriptionLoading}
-            onRequireUpgrade={() => setShowUpgradeModal(true)}
-          />
+          <Link
+            to="/app/brokers"
+            className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:bg-[var(--surface-elevated)] sm:p-6"
+          >
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
+              <PlugZap size={20} />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-medium">Manage broker connections</h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+                Connect a broker and import trades on the Brokers page.
+              </p>
+            </div>
+
+            <ChevronRight size={18} className="shrink-0 text-[var(--text-muted)]" />
+          </Link>
         </ScrollReveal>
 
         {/* APPLICATION */}
@@ -724,10 +732,6 @@ function SettingsPage() {
         document.body
       )}
 
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-      />
     </AppShell>
   );
 }

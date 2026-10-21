@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, CircleDollarSign, ClipboardCheck, CreditCard, Goal, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, WalletCards, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, CircleDollarSign, ClipboardCheck, CreditCard, Goal, LayoutDashboard, LogOut, Menu, PlugZap, Settings, ShieldCheck, WalletCards, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   useMotionValueEvent,
@@ -19,6 +19,7 @@ const navigation = [
   [ClipboardCheck, "Trades", "/app/trades"],
   [CircleDollarSign, "Money", "/app/money"],
   [WalletCards, "Accounts", "/app/accounts"],
+  [PlugZap, "Brokers", "/app/brokers"],
   [ShieldCheck, "Rules", "/app/rules"],
   [Goal, "Goals", "/app/goals"],
   [CalendarDays, "Calendar", "/app/calendar"],

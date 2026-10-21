@@ -16,6 +16,7 @@ import BillingConfirmationPage from "../../pages/BillingConfirmationPage";
 import SettingsPage from "../../pages/SettingsPage";
 import CheckEmailPage from "../../pages/CheckEmailPage";
 import AccountsPage from "../../pages/AccountsPage";
+import BrokersPage from "../../pages/BrokersPage";
 import TermsPage from "../../pages/TermsPage";
 
 import ProtectedRoute from "../../routes/ProtectedRoute";
@@ -118,6 +119,8 @@ function AnimatedRoutes() {
             <Route path="/app/money" element={<MoneyPage />} />
 
             <Route path="/app/accounts" element={<AccountsPage />} />
+
+            <Route path="/app/brokers" element={<BrokersPage />} />
 
             <Route path="/app/rules" element={<RulesPage />} />
 

@@ -12,7 +12,8 @@ import {
   X,
 } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import AppShell from "../../components/app/AppShell";
 import {
@@ -723,8 +724,6 @@ function TransactionRow({
   onDelete,
   deleting,
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   const isIncome = transaction.type === "income";
 
   return (
@@ -739,8 +738,8 @@ function TransactionRow({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <p className="min-w-0 [overflow-wrap:anywhere] text-sm font-medium text-[var(--text-primary)]">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+            <p className="min-w-[4rem] flex-1 [overflow-wrap:anywhere] text-sm font-medium text-[var(--text-primary)]">
               {transaction.category || (isIncome ? "Income" : "Expense")}
             </p>
 
@@ -771,30 +770,116 @@ function TransactionRow({
           </div>
         </div>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setMenuOpen((current) => !current)}
-          disabled={deleting}
-          className="grid size-9 place-items-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)] disabled:opacity-50"
-          aria-label="Transaction options"
-        >
-          {deleting ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <MoreHorizontal size={17} />
-          )}
-        </button>
+        <ActionMenu
+          transaction={transaction}
+          deleting={deleting}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      </div>
+    </div>
+  );
+}
 
-        {menuOpen && (
-          <div className="absolute right-0 top-10 z-20 w-36 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-1 shadow-2xl">
+/**
+ * The Edit / Delete menu for a transaction. It floats above the page, so the
+ * list card can never clip it, and it opens upward when there is no room below.
+ */
+function ActionMenu({ transaction, deleting, onEdit, onDelete }) {
+  const [position, setPosition] = useState(null);
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+  const open = position !== null;
+
+  function toggle() {
+    if (open) {
+      setPosition(null);
+      return;
+    }
+
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const menuWidth = 152;
+    const menuHeight = 96;
+    const roomBelow = window.innerHeight - rect.bottom;
+    const top =
+      roomBelow >= menuHeight + 12
+        ? rect.bottom + 6
+        : Math.max(8, rect.top - menuHeight - 6);
+    const left = Math.min(
+      Math.max(8, rect.right - menuWidth),
+      window.innerWidth - menuWidth - 8
+    );
+
+    setPosition({ top, left, width: menuWidth });
+  }
+
+  // Close on an outside click, Escape, scrolling or resizing.
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const close = () => setPosition(null);
+    function onPointerDown(event) {
+      if (
+        menuRef.current?.contains(event.target) ||
+        buttonRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      close();
+    }
+    function onKeyDown(event) {
+      if (event.key === "Escape") close();
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggle}
+        disabled={deleting}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="grid size-9 shrink-0 place-items-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)] disabled:opacity-50"
+        aria-label="Transaction options"
+      >
+        {deleting ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <MoreHorizontal size={17} />
+        )}
+      </button>
+
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={{ position: "fixed", top: position.top, left: position.left, width: position.width }}
+            className="z-[60] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-1 shadow-2xl"
+          >
             <button
               type="button"
+              role="menuitem"
               onClick={() => {
-                setMenuOpen(false);
+                setPosition(null);
                 onEdit(transaction);
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--text-secondary)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+              className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-[var(--text-secondary)] transition hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
             >
               <Pencil size={14} />
               Edit
@@ -802,22 +887,23 @@ function TransactionRow({
 
             <button
               type="button"
+              role="menuitem"
               onClick={() => {
-                setMenuOpen(false);
+                setPosition(null);
                 onDelete(transaction);
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--danger)] transition hover:bg-[var(--surface)]"
+              className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-[var(--danger)] transition hover:bg-[var(--surface)]"
             >
               <Trash2 size={14} />
               Delete
             </button>
-          </div>
+          </div>,
+          document.body
         )}
-      </div>
-      </div>
-    </div>
+    </>
   );
 }
+
 
 // =========================================================
 // MODAL

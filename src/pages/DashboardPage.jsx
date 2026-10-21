@@ -159,9 +159,9 @@ function DashboardPage() {
                 <RevealItem
                   as="div"
                   key={`${trade.instrument}-${trade.created_at}`}
-                  className="flex items-center justify-between gap-3 py-4"
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-4"
                 >
-                  <span className="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">
+                  <span className="min-w-[6rem] flex-1 text-sm font-medium [overflow-wrap:anywhere]">
                     {trade.instrument}
                   </span>
                   <span className="shrink-0 font-mono text-xs text-[var(--text-secondary)]">
