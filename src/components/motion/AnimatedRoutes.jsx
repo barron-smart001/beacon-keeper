@@ -14,6 +14,7 @@ import CalendarPage from "../../pages/CalendarPage";
 import BillingPage from "../../pages/BillingPage";
 import BillingConfirmationPage from "../../pages/BillingConfirmationPage";
 import SettingsPage from "../../pages/SettingsPage";
+import ProfilePage from "../../pages/ProfilePage";
 import CheckEmailPage from "../../pages/CheckEmailPage";
 import AccountsPage from "../../pages/AccountsPage";
 import BrokersPage from "../../pages/BrokersPage";
@@ -133,6 +134,8 @@ function AnimatedRoutes() {
             <Route path="/app/billing/confirm" element={<BillingConfirmationPage />} />
 
             <Route path="/app/settings" element={<SettingsPage />} />
+
+            <Route path="/app/profile" element={<ProfilePage />} />
           </Route>
         </Route>
 

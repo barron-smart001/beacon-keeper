@@ -76,6 +76,13 @@ function ProfileCard() {
     timezone: "",
     experience_level: "",
   });
+  const [savedForm, setSavedForm] = useState({
+    full_name: "",
+    headline: "",
+    country: "",
+    timezone: "",
+    experience_level: "",
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState(null); // { type, text }
@@ -85,13 +92,15 @@ function ProfileCard() {
   const cameraSupported = Boolean(navigator.mediaDevices?.getUserMedia);
 
   useEffect(() => {
-    setForm({
+    const profileForm = {
       full_name: details?.full_name || user?.user_metadata?.full_name || "",
       headline: details?.headline || "",
       country: details?.country || "",
       timezone: details?.timezone || browserTimezone(),
       experience_level: details?.experience_level || "",
-    });
+    };
+    setForm(profileForm);
+    setSavedForm(profileForm);
   }, [details, user]);
 
   // The photo menu closes on an outside click or Escape.
@@ -115,11 +124,12 @@ function ProfileCard() {
 
   function update(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+    setMessage(null);
   }
 
   async function save(event) {
     event.preventDefault();
-    if (!user?.id || isSaving) return;
+    if (!user?.id || isSaving || !hasChanges) return;
 
     setIsSaving(true);
     setMessage(null);
@@ -143,8 +153,17 @@ function ProfileCard() {
       return;
     }
 
+    const nextForm = {
+      full_name: form.full_name.trim(),
+      headline: form.headline.trim(),
+      country: form.country.trim(),
+      timezone: form.timezone,
+      experience_level: form.experience_level,
+    };
+    setForm(nextForm);
+    setSavedForm(nextForm);
     await refresh();
-    setMessage({ type: "success", text: "Profile saved." });
+    setMessage({ type: "success", text: "Saved." });
   }
 
   function chooseFile(event) {
@@ -202,6 +221,7 @@ function ProfileCard() {
   }
 
   const initial = (displayName || "?").trim().charAt(0).toUpperCase();
+  const hasChanges = Object.keys(form).some((key) => form[key] !== savedForm[key]);
 
   return (
     <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
@@ -377,14 +397,16 @@ function ProfileCard() {
             {message?.text}
           </p>
 
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSaving && <Loader2 size={15} className="animate-spin" />}
-            {isSaving ? "Saving…" : "Save profile"}
-          </button>
+          {hasChanges && (
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--accent)] px-5 text-sm font-semibold text-[#17130d] hover:bg-[var(--accent-light)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSaving && <Loader2 size={15} className="animate-spin" />}
+              {isSaving ? "Saving…" : "Save profile"}
+            </button>
+          )}
         </div>
       </form>
 

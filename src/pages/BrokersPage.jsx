@@ -12,15 +12,14 @@ function BrokersPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-4xl px-5 py-8 sm:px-8 lg:py-10">
+      <main className="mx-auto max-w-5xl px-5 py-8 sm:px-8 lg:py-10">
         <ScrollReveal as="div">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
             Automatic trade import
           </p>
           <h1 className="mt-3 text-3xl font-medium tracking-[-0.045em] sm:text-4xl">Brokers</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-            Connect a broker account so its trades import into TradeFrame on their own. Access is read-only: TradeFrame can
-            see your trades but can never place orders or move money.
+            Connect a broker so its trades import into TradeFrame on their own, with read-only access.
           </p>
         </ScrollReveal>
 

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAccounts } from "../../hooks/useAccounts";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
+import BrokerComingSoon from "./BrokerComingSoon";
 
 const CONNECTION_COLUMNS =
   "id, account_id, broker, platform, provider, login, server, status, last_error_message, last_synced_at, last_sync_status";
@@ -232,6 +233,9 @@ function BrokerConnections({ isSubscribed, subscriptionLoading, onRequireUpgrade
     setMessage({ type: "info", text: "Disconnected. Trades already imported are kept." });
     await load();
   }
+
+  // The broker service is not there yet: show an honest, well-designed explanation instead.
+  if (loadState === "unavailable") return <BrokerComingSoon />;
 
   return (
     <article className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">

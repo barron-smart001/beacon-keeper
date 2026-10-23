@@ -58,7 +58,7 @@ function GoalsPage() {
         .from("goals")
         .select("*")
         .eq("user_id", user.id)
-        .neq("status", "archived")
+        .eq("status", "active")
         .order("target_date", {
           ascending: true,
           nullsFirst: false,
@@ -214,11 +214,7 @@ function GoalsPage() {
       return;
     }
 
-    setGoals((current) =>
-      current.map((item) =>
-        item.id === data.id ? data : item
-      )
-    );
+    setGoals((current) => current.filter((item) => item.id !== data.id));
   }
 
   async function deleteGoal(goalId) {

@@ -17,7 +17,7 @@ function DashboardPage() {
   const summary = useMemo(() => { const income = data.money.filter((item) => item.type === "income").reduce((total, item) => total + Number(item.amount), 0); const expense = data.money.filter((item) => item.type === "expense").reduce((total, item) => total + Number(item.amount), 0); const completed = data.trades.filter((item) => item.status === "completed"); return { income, expense, pnl: completed.reduce((total, item) => total + Number(item.pnl || 0), 0), active: data.trades.filter((item) => item.status === "active").length }; }, [data]);
   function number(value, signed = true) { return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2, signDisplay: signed ? "always" : "never", ...(currency ? { style: "currency", currency } : {}) }).format(value); }
   function amountOrEmpty(value, hasRecords, signed = true) { return hasRecords ? number(value, signed) : "No records yet"; }
-  const summaries = [["Money in", amountOrEmpty(summary.income, data.money.length > 0, false)], ["Money out", amountOrEmpty(summary.expense, data.money.length > 0, false)], ["Trading P/L", amountOrEmpty(summary.pnl, data.trades.some((trade) => trade.status === "completed"))], ["Active trades", data.trades.length ? String(summary.active) : "No records yet"]];
+  const summaries = [["Money in", amountOrEmpty(summary.income, data.money.length > 0, false)], ["Money out", amountOrEmpty(summary.expense, data.money.length > 0, false)], ["Trading P/L", amountOrEmpty(summary.pnl, data.trades.some((trade) => trade.status === "completed")), data.trades.some((trade) => trade.status === "completed") ? (summary.pnl > 0 ? "good" : summary.pnl < 0 ? "bad" : "") : ""], ["Active trades", data.trades.length ? String(summary.active) : "No records yet"]];
   return (
     <AppShell>
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:py-10">
@@ -59,14 +59,26 @@ function DashboardPage() {
           className="mt-9 grid grid-cols-2 gap-3 xl:grid-cols-4"
           aria-label="Financial summary"
         >
-          {summaries.map(([label, value]) => (
+          {summaries.map(([label, value, tone]) => (
             <RevealItem
               as="article"
               key={label}
               className="min-w-0 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5"
             >
               <p className="text-xs text-[var(--text-muted)]">{label}</p>
-              <p className="mt-4 [overflow-wrap:anywhere] font-mono text-sm text-[var(--text-secondary)] sm:mt-6">
+              <p
+                className={`mt-4 [overflow-wrap:anywhere] font-mono sm:mt-5 ${
+                  value === "No records yet"
+                    ? "text-sm text-[var(--text-muted)]"
+                    : `text-base font-semibold tracking-[-0.02em] sm:text-xl ${
+                        tone === "good"
+                          ? "text-[var(--success)]"
+                          : tone === "bad"
+                            ? "text-[var(--danger)]"
+                            : "text-[var(--text-primary)]"
+                      }`
+                }`}
+              >
                 {value}
               </p>
             </RevealItem>

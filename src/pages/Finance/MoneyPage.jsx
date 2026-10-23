@@ -466,11 +466,11 @@ const MoneyPage = () => {
 
           <ScrollReveal as="div" className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm text-[var(--text-muted)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                 Financial record
               </p>
 
-              <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+              <h1 className="mt-3 text-3xl font-medium tracking-[-0.045em] sm:text-4xl">
                 Money
               </h1>
 

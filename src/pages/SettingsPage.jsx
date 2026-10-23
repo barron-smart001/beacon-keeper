@@ -7,7 +7,9 @@ import {
   PlugZap,
   ShieldCheck,
   Settings2,
+  Sun,
   Trash2,
+  UserRound,
   WalletCards,
   X,
 } from "lucide-react";
@@ -17,13 +19,14 @@ import { createPortal } from "react-dom";
 
 import { Link, useNavigate } from "react-router-dom";
 
-import ProfileCard from "../components/profile/ProfileCard";
+import GoalHistory from "../components/goal/GoalHistory";
 import AppShell from "../components/app/AppShell";
 import { ScrollReveal } from "../components/motion/ScrollReveal";
 
 import { useAuth } from "../hooks/useAuth";
 
 import { supabase } from "../lib/supabase";
+import { getThemePreference, setThemePreference } from "../lib/theme";
 
 const inputClass =
   "mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3.5 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
@@ -41,6 +44,7 @@ function SettingsPage() {
 
   const [modal, setModal] = useState(null);
   const [isWorking, setIsWorking] = useState(false);
+  const [theme, setTheme] = useState(getThemePreference);
 
   useEffect(() => {
     let mounted = true;
@@ -192,6 +196,12 @@ function SettingsPage() {
     setModal(null);
   }
 
+  function toggleTheme() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setThemePreference(nextTheme);
+    setTheme(nextTheme);
+  }
+
   return (
     <AppShell>
       <main className="mx-auto max-w-5xl px-5 py-8 sm:px-8 lg:py-10">
@@ -206,8 +216,8 @@ function SettingsPage() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-            Manage your TradeFrame account, trading preferences,
-            accounts, and application experience.
+            Manage your TradeFrame profile, trading preferences,
+            and application experience.
           </p>
         </ScrollReveal>
 
@@ -240,7 +250,23 @@ function SettingsPage() {
             </p>
           </div>
 
-          <ProfileCard />
+          <Link
+            to="/app/profile"
+            className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 transition hover:bg-[var(--surface-elevated)] sm:p-6"
+          >
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
+              <UserRound size={20} />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-medium">Profile</h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+                Update your personal details and profile photo.
+              </p>
+            </div>
+
+            <ChevronRight size={18} className="shrink-0 text-[var(--text-muted)]" />
+          </Link>
         </ScrollReveal>
 
         {/* TRADING */}
@@ -334,6 +360,8 @@ function SettingsPage() {
           </article>
         </ScrollReveal>
 
+        <GoalHistory />
+
         {/* TRADING ACCOUNTS */}
         <ScrollReveal as="section" className="mt-8">
           <div className="mb-4">
@@ -401,7 +429,7 @@ function SettingsPage() {
             <div className="flex items-center justify-between gap-4 border-b border-[var(--border-soft)] p-5 sm:p-6">
               <div className="flex items-center gap-4">
                 <div className="grid size-10 place-items-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--accent)]">
-                  <Moon size={18} />
+                  {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
                 </div>
 
                 <div>
@@ -410,14 +438,21 @@ function SettingsPage() {
                   </h2>
 
                   <p className="mt-1 text-xs text-[var(--text-muted)]">
-                    TradeFrame currently uses its dark interface.
+                    Choose a light or dark appearance for TradeFrame.
                   </p>
                 </div>
               </div>
 
-              <span className="rounded-full border border-[var(--border-soft)] px-3 py-1 text-xs text-[var(--text-muted)]">
-                Dark
-              </span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-pressed={theme === "light"}
+                aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--border-soft)] px-4 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-elevated)]"
+              >
+                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </button>
             </div>
 
             {/* Notifications */}

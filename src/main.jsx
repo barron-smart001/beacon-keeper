@@ -5,7 +5,10 @@ import { AccountProvider } from "./context/AccountProvider";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ProfileProvider } from "./context/ProfileProvider";
 import { SubscriptionProvider } from "./context/SubscriptionProvider";
+import { getThemePreference } from "./lib/theme";
 import "./index.css";
+
+document.documentElement.dataset.theme = getThemePreference();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

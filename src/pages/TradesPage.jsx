@@ -101,7 +101,7 @@ function TradeForm({
       (form.status === "completed" && !form.exit)
     ) {
       setError(
-        "Add an instrument, entry, position size, and exit price for a completed trade."
+        "Add a pair, entry, position size, and exit price for a completed trade."
       );
       return;
     }
@@ -162,7 +162,7 @@ function TradeForm({
 
         <div className="mt-7 grid gap-5 sm:grid-cols-2">
           <label className="text-sm font-medium sm:col-span-2">
-            Instrument
+            Pair
             <input
               autoFocus
               required
@@ -749,7 +749,7 @@ function TradesPage() {
                 <thead className="border-b border-[var(--border-soft)] text-xs text-[var(--text-muted)]">
                   <tr>
                     <th className="px-5 py-3 font-medium sm:px-6">
-                      Instrument
+                      Pair
                     </th>
 
                     {showingAll && (
